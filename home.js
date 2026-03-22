@@ -37,13 +37,105 @@ function getUserId() {
     return userId;
 }
 
+// IndexedDB初期化
+let indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
+let db_indexed = null;
+
+function initIndexedDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open('MemoriesDB', 1);
+        
+        request.onerror = () => {
+            console.error('IndexedDB初期化エラー:', request.error);
+            reject(request.error);
+        };
+        
+        request.onsuccess = () => {
+            db_indexed = request.result;
+            console.log('IndexedDB初期化成功');
+            resolve(db_indexed);
+        };
+        
+        request.onupgradeneeded = (event) => {
+            db_indexed = event.target.result;
+            if (!db_indexed.objectStoreNames.contains('memories')) {
+                db_indexed.createObjectStore('memories', { keyPath: 'date' });
+            }
+        };
+    });
+}
+
+// IndexedDBに写真を保存
+function savePhotoToIndexedDB(photoData) {
+    if (!db_indexed) {
+        console.log('IndexedDBが初期化されていません');
+        return Promise.resolve();
+    }
+    
+    return new Promise((resolve, reject) => {
+        const transaction = db_indexed.transaction(['memories'], 'readwrite');
+        const store = transaction.objectStore('memories');
+        const request = store.put(photoData);
+        
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+            console.log('IndexedDBに保存しました');
+            resolve();
+        };
+    });
+}
+
+// IndexedDBから写真を読み込む
+function loadPhotosFromIndexedDB() {
+    if (!db_indexed) {
+        console.log('IndexedDBが初期化されていません');
+        return Promise.resolve([]);
+    }
+    
+    return new Promise((resolve, reject) => {
+        const transaction = db_indexed.transaction(['memories'], 'readonly');
+        const store = transaction.objectStore('memories');
+        const request = store.getAll();
+        
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+            console.log('IndexedDBから読み込み:', request.result.length, '件');
+            resolve(request.result);
+        };
+    });
+}
+
+// IndexedDBから写真を削除
+function removePhotoFromIndexedDB(photoDate) {
+    if (!db_indexed) return Promise.resolve();
+    
+    return new Promise((resolve, reject) => {
+        const transaction = db_indexed.transaction(['memories'], 'readwrite');
+        const store = transaction.objectStore('memories');
+        const request = store.delete(photoDate);
+        
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+            console.log('IndexedDBから削除しました');
+            resolve();
+        };
+    });
+}
+
 // ページ読み込み時の初期化
 document.addEventListener('DOMContentLoaded', function() {
     initializePage();
     calculateRelationshipDays();
     setupTabNavigation();
     setupImageUpload();
-    loadPhotosFromFirebase();
+    
+    // IndexedDBを初期化してからFirebaseから読み込む
+    initIndexedDB().then(() => {
+        loadPhotosFromFirebase();
+    }).catch(() => {
+        console.warn('IndexedDB初期化失敗、localStorageから読み込みます');
+        loadPhotosFromFirebase();
+    });
 });
 
 // ページ初期化
@@ -288,19 +380,35 @@ function savePhotoToFirebase(photoData) {
 
 // ローカルストレージに写真を保存
 function savePhotoToLocalStorage(photoData) {
-    let photos = JSON.parse(localStorage.getItem('photos')) || [];
-    const exists = photos.some(p => p.date === photoData.date);
-    if (!exists) {
-        photos.push(photoData);
-        localStorage.setItem('photos', JSON.stringify(photos));
+    try {
+        let photos = JSON.parse(localStorage.getItem('photos')) || [];
+        const exists = photos.some(p => p.date === photoData.date);
+        if (!exists) {
+            photos.push(photoData);
+            localStorage.setItem('photos', JSON.stringify(photos));
+        }
+    } catch (error) {
+        if (error.name === 'QuotaExceededError') {
+            console.warn('localStorage容量超過。IndexedDBを使用します。');
+            savePhotoToIndexedDB(photoData);
+        } else {
+            console.error('localStorage保存エラー:', error);
+        }
     }
 }
 
 // Firebaseから写真を読み込む
 function loadPhotosFromFirebase() {
     if (!firebaseInitialized || !db) {
-        console.log('Firebaseが利用できないため、ローカルストレージから読み込みます');
-        loadPhotosFromLocalStorage();
+        console.log('Firebaseが利用できないため、IndexedDBから読み込みます');
+        loadPhotosFromIndexedDB().then((photos) => {
+            photos.reverse(); // 降順で表示
+            photos.forEach(photoData => {
+                if (photoData.image) {
+                    addPhotoToGallery(photoData);
+                }
+            });
+        });
         return;
     }
     
@@ -318,7 +426,14 @@ function loadPhotosFromFirebase() {
         },
         (error) => {
             console.error('Firebaseから読み込む際にエラー:', error);
-            loadPhotosFromLocalStorage();
+            loadPhotosFromIndexedDB().then((photos) => {
+                photos.reverse();
+                photos.forEach(photoData => {
+                    if (photoData.image) {
+                        addPhotoToGallery(photoData);
+                    }
+                });
+            });
         });
 }
 
@@ -362,6 +477,7 @@ function addPhotoToGallery(photoData) {
         if (photoData.firebaseId) {
             removePhotoFromFirebase(photoData.firebaseId);
         }
+        removePhotoFromIndexedDB(photoData.date);
         removePhotoFromLocalStorage(photoData);
     });
     
