@@ -375,17 +375,44 @@ function savePhotoToFirebase(photoData) {
         return;
     }
     
-    db.collection('memories')
-        .add(photoData)
-        .then((docRef) => {
-            console.log('Firebaseに保存しました:', docRef.id);
-            photoData.firebaseId = docRef.id;
-            savePhotoToLocalStorage(photoData);
-        })
-        .catch((error) => {
-            console.error('Firebaseへの保存に失敗:', error);
-            console.log('ローカルストレージに保存されています');
-        });
+    // Base64画像をBlob に変換
+    const base64Data = photoData.image.split(',')[1];
+    const byteCharacters = atob(base64Data);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: 'image/jpeg' });
+    
+    // ファイルパスを作成（重複なし）
+    const storage = firebase.storage();
+    const fileName = `memories/${photoData.userId}/${photoData.date}.jpg`;
+    const storageRef = storage.ref(fileName);
+    
+    // Firebase Storageに画像をアップロード
+    storageRef.put(blob).then((snapshot) => {
+        console.log('Firebase Storageにアップロード完了');
+        // ダウンロードURLを取得
+        return storageRef.getDownloadURL();
+    }).then((downloadURL) => {
+        console.log('ダウンロードURL取得:', downloadURL);
+        
+        // Firestoreにメタデータを保存（画像データは含めない）
+        const firestoreData = {
+            timestamp: photoData.timestamp,
+            date: photoData.date,
+            userId: photoData.userId,
+            imageUrl: downloadURL
+        };
+        
+        return db.collection('memories').add(firestoreData);
+    }).then((docRef) => {
+        console.log('Firestoreにメタデータを保存しました:', docRef.id);
+    }).catch((error) => {
+        console.error('Firebase保存エラー:', error);
+        console.log('ローカルストレージに保存されています');
+    });
 }
 
 // ローカルストレージに写真を保存
@@ -412,7 +439,7 @@ function loadPhotosFromFirebase() {
     if (!firebaseInitialized || !db) {
         console.log('Firebaseが利用できないため、IndexedDBから読み込みます');
         loadPhotosFromIndexedDB().then((photos) => {
-            photos.reverse(); // 降順で表示
+            photos.reverse();
             photos.forEach(photoData => {
                 if (photoData.image) {
                     addPhotoToGallery(photoData);
@@ -431,7 +458,25 @@ function loadPhotosFromFirebase() {
             snapshot.forEach((doc) => {
                 const photoData = doc.data();
                 photoData.firebaseId = doc.id;
-                addPhotoToGallery(photoData);
+                
+                // Firebase Storageから画像を取得
+                if (photoData.imageUrl) {
+                    // imageUrlから画像データを取得（キャッシュ）
+                    fetch(photoData.imageUrl)
+                        .then(res => res.blob())
+                        .then(blob => {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                photoData.image = e.target.result;
+                                addPhotoToGallery(photoData);
+                            };
+                            reader.readAsDataURL(blob);
+                        })
+                        .catch(err => console.error('画像取得エラー:', err));
+                } else {
+                    // 旧形式のデータ（直接画像データを含む）
+                    addPhotoToGallery(photoData);
+                }
             });
         },
         (error) => {
