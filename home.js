@@ -186,18 +186,32 @@ function showPreview(imageData) {
 
 // Nowボタンクリック処理
 function handleNowButtonClick(e) {
-    if (e && e.preventDefault) {
-        e.preventDefault();
-    }
-    e.stopPropagation();
-    
-    console.log('Nowボタンがクリックされました');
-    
-    if (window.currentImageData) {
-        savePhotoWithTimestamp(window.currentImageData);
-        document.getElementById('previewArea').classList.add('hidden');
-        document.getElementById('imageUpload').value = '';
-        window.currentImageData = null;
+    try {
+        if (e && e.preventDefault) {
+            e.preventDefault();
+        }
+        if (e && e.stopPropagation) {
+            e.stopPropagation();
+        }
+        
+        console.log('Nowボタンがクリックされました');
+        console.log('currentImageData:', window.currentImageData ? '存在' : '存在しません');
+        
+        if (window.currentImageData) {
+            console.log('savePhotoWithTimestampを実行中...');
+            savePhotoWithTimestamp(window.currentImageData);
+            
+            setTimeout(() => {
+                document.getElementById('previewArea').classList.add('hidden');
+                document.getElementById('imageUpload').value = '';
+                window.currentImageData = null;
+                console.log('処理完了');
+            }, 500);
+        } else {
+            console.error('currentImageDataが空です');
+        }
+    } catch (error) {
+        console.error('Nowボタンクリック時のエラー:', error);
     }
 }
 
@@ -217,19 +231,28 @@ function handleCancelButtonClick(e) {
 
 // タイムスタンプ付きで写真を保存
 function savePhotoWithTimestamp(imageData) {
-    const now = new Date();
-    const timestamp = formatDateTime(now);
-    
-    const photoData = {
-        image: imageData,
-        timestamp: timestamp,
-        date: now.toISOString(),
-        userId: getUserId()
-    };
-    
-    savePhotoToFirebase(photoData);
-    savePhotoToLocalStorage(photoData);
-    addPhotoToGallery(photoData);
+    try {
+        console.log('savePhotoWithTimestamp開始');
+        const now = new Date();
+        const timestamp = formatDateTime(now);
+        
+        const photoData = {
+            image: imageData,
+            timestamp: timestamp,
+            date: now.toISOString(),
+            userId: getUserId()
+        };
+        
+        console.log('photoData作成完了:', photoData.timestamp);
+        
+        savePhotoToFirebase(photoData);
+        savePhotoToLocalStorage(photoData);
+        addPhotoToGallery(photoData);
+        
+        console.log('保存完了');
+    } catch (error) {
+        console.error('savePhotoWithTimestampエラー:', error);
+    }
 }
 
 // 日付時刻をフォーマット
