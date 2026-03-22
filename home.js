@@ -1,16 +1,55 @@
+// Firebase設定
+const firebaseConfig = {
+    apiKey: "AIzaSyD9aDMtNeMUaUv4UAG28SZDJyCrskwrCXk",
+    authDomain: "shimizu-ayumi-homepage.firebaseapp.com",
+    projectId: "shimizu-ayumi-homepage",
+    storageBucket: "shimizu-ayumi-homepage.firebasestorage.app",
+    messagingSenderId: "996684398293",
+    appId: "1:996684398293:web:e361b0adbe955686f32c5c",
+    measurementId: "G-N8ENT8NJHM"
+};
+
+// Firebase初期化
+let db = null;
+let firebaseInitialized = false;
+
+if (typeof firebase !== 'undefined') {
+    try {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+        firebaseInitialized = true;
+        console.log('Firebaseが初期化されました');
+    } catch (error) {
+        console.error('Firebase初期化エラー:', error);
+        alert('Firebaseの接続に失敗しました。ローカルモードで動作します。');
+    }
+} else {
+    console.warn('Firebaseスクリプトが読み込まれていません。ローカルストレージのみを使用します。');
+}
+
+// ユーザーID（ローカルに保存）
+function getUserId() {
+    let userId = localStorage.getItem('userId');
+    if (!userId) {
+        userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('userId', userId);
+    }
+    return userId;
+}
+
 // ページ読み込み時の初期化
 document.addEventListener('DOMContentLoaded', function() {
     initializePage();
     calculateRelationshipDays();
     setupTabNavigation();
     setupImageUpload();
-    loadPhotosFromStorage();
+    loadPhotosFromFirebase();
 });
 
 // ページ初期化
 function initializePage() {
-    // ゆっくり出てくる演出は CSS の animation で実装済み
     console.log('ページが読み込まれました');
+    console.log('ユーザーID:', getUserId());
 }
 
 // 交際期間の日数を計算
@@ -18,7 +57,6 @@ function calculateRelationshipDays() {
     const startDate = new Date('2025-11-09');
     const today = new Date();
     
-    // 時間をリセットして日数を正確に計算
     startDate.setHours(0, 0, 0, 0);
     today.setHours(0, 0, 0, 0);
     
@@ -43,22 +81,17 @@ function setupTabNavigation() {
 
 // タブ切り替え
 function switchTab(tabName) {
-    // すべてのタブコンテンツを非表示
     const tabContents = document.querySelectorAll('.tab-content');
     tabContents.forEach(content => {
         content.classList.remove('active');
     });
     
-    // すべてのタブボタンをインアクティブ
     const tabButtons = document.querySelectorAll('.tab-button');
     tabButtons.forEach(button => {
         button.classList.remove('active');
     });
     
-    // 選択されたタブを表示
     document.getElementById(tabName).classList.add('active');
-    
-    // 選択されたボタンをアクティブに
     document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
 }
 
@@ -67,10 +100,8 @@ function setupImageUpload() {
     const imageUploadInput = document.getElementById('imageUpload');
     const uploadBox = document.querySelector('.upload-box');
     
-    // ファイル入力変更イベント
     imageUploadInput.addEventListener('change', handleImageUpload);
     
-    // ドラッグ&ドロップ機能
     uploadBox.addEventListener('dragover', function(e) {
         e.preventDefault();
         uploadBox.style.borderColor = '#764ba2';
@@ -127,7 +158,6 @@ function showPreview(imageData) {
     previewArea.classList.remove('hidden');
     previewMessage.textContent = '「Now」ボタンを押すと、今の日付と時刻と共に保存されます';
     
-    // 前の「Now」ボタンのイベントリスナーを削除
     const newNowButton = nowButton.cloneNode(true);
     nowButton.parentNode.replaceChild(newNowButton, nowButton);
     
@@ -143,12 +173,112 @@ function showPreview(imageData) {
     });
 }
 
+// タイムスタンプ付きで写真を保存
+function savePhotoWithTimestamp(imageData) {
+    const now = new Date();
+    const timestamp = formatDateTime(now);
+    
+    const photoData = {
+        image: imageData,
+        timestamp: timestamp,
+        date: now.toISOString(),
+        userId: getUserId()
+    };
+    
+    savePhotoToFirebase(photoData);
+    savePhotoToLocalStorage(photoData);
+    addPhotoToGallery(photoData);
+}
+
+// 日付時刻をフォーマット
+function formatDateTime(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    
+    return `${year}年${month}月${day}日 ${hours}:${minutes}`;
+}
+
+// Firebaseに写真を保存
+function savePhotoToFirebase(photoData) {
+    if (!firebaseInitialized || !db) {
+        console.log('Firebaseが利用できないため、ローカルのみに保存します');
+        return;
+    }
+    
+    db.collection('memories')
+        .add(photoData)
+        .then((docRef) => {
+            console.log('Firebaseに保存しました:', docRef.id);
+            photoData.firebaseId = docRef.id;
+            savePhotoToLocalStorage(photoData);
+        })
+        .catch((error) => {
+            console.error('Firebaseへの保存に失敗:', error);
+            console.log('ローカルストレージに保存されています');
+        });
+}
+
+// ローカルストレージに写真を保存
+function savePhotoToLocalStorage(photoData) {
+    let photos = JSON.parse(localStorage.getItem('photos')) || [];
+    const exists = photos.some(p => p.date === photoData.date);
+    if (!exists) {
+        photos.push(photoData);
+        localStorage.setItem('photos', JSON.stringify(photos));
+    }
+}
+
+// Firebaseから写真を読み込む
+function loadPhotosFromFirebase() {
+    if (!firebaseInitialized || !db) {
+        console.log('Firebaseが利用できないため、ローカルストレージから読み込みます');
+        loadPhotosFromLocalStorage();
+        return;
+    }
+    
+    db.collection('memories')
+        .orderBy('date', 'desc')
+        .onSnapshot((snapshot) => {
+            const photoGallery = document.getElementById('photoGallery');
+            photoGallery.innerHTML = '';
+            
+            snapshot.forEach((doc) => {
+                const photoData = doc.data();
+                photoData.firebaseId = doc.id;
+                addPhotoToGallery(photoData);
+            });
+        },
+        (error) => {
+            console.error('Firebaseから読み込む際にエラー:', error);
+            loadPhotosFromLocalStorage();
+        });
+}
+
+// ローカルストレージから写真を読み込む
+function loadPhotosFromLocalStorage() {
+    const photos = JSON.parse(localStorage.getItem('photos')) || [];
+    
+    photos.forEach(photoData => {
+        if (photoData.image) {
+            addPhotoToGallery(photoData);
+        }
+    });
+}
+
 // ギャラリーに写真を追加
 function addPhotoToGallery(photoData) {
     const photoGallery = document.getElementById('photoGallery');
     
+    if (document.querySelector(`[data-firebase-id="${photoData.firebaseId}"]`)) {
+        return;
+    }
+    
     const photoItem = document.createElement('div');
     photoItem.className = 'photo-item';
+    photoItem.setAttribute('data-firebase-id', photoData.firebaseId || photoData.date);
     
     const img = document.createElement('img');
     img.src = photoData.image;
@@ -163,7 +293,11 @@ function addPhotoToGallery(photoData) {
     deleteBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         photoItem.remove();
-        removePhotoFromStorage(photoData);
+        
+        if (photoData.firebaseId) {
+            removePhotoFromFirebase(photoData.firebaseId);
+        }
+        removePhotoFromLocalStorage(photoData);
     });
     
     photoItem.appendChild(img);
@@ -172,52 +306,25 @@ function addPhotoToGallery(photoData) {
     photoGallery.appendChild(photoItem);
 }
 
-// タイムスタンプ付きで写真を保存
-function savePhotoWithTimestamp(imageData) {
-    const now = new Date();
-    const timestamp = formatDateTime(now);
+// Firebaseから写真を削除
+function removePhotoFromFirebase(firebaseId) {
+    if (!firebaseInitialized || !db) {
+        return;
+    }
     
-    const photoData = {
-        image: imageData,
-        timestamp: timestamp,
-        date: now.toISOString()
-    };
-    
-    addPhotoToGallery(photoData);
-    savePhotoToStorage(photoData);
+    db.collection('memories')
+        .doc(firebaseId)
+        .delete()
+        .then(() => {
+            console.log('Firebaseから削除しました');
+        })
+        .catch((error) => {
+            console.error('Firebaseからの削除に失敗:', error);
+        });
 }
 
-// 日付時刻をフォーマット
-function formatDateTime(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    
-    return `${year}年${month}月${day}日 ${hours}:${minutes}`;
-}
-
-// LocalStorage に写真を保存
-function savePhotoToStorage(photoData) {
-    let photos = JSON.parse(localStorage.getItem('photos')) || [];
-    photos.push(photoData);
-    localStorage.setItem('photos', JSON.stringify(photos));
-}
-
-// LocalStorage から写真を読み込む
-function loadPhotosFromStorage() {
-    const photos = JSON.parse(localStorage.getItem('photos')) || [];
-    
-    photos.forEach(photoData => {
-        if (photoData.image) {
-            addPhotoToGallery(photoData);
-        }
-    });
-}
-
-// LocalStorage から写真を削除
-function removePhotoFromStorage(photoData) {
+// ローカルストレージから写真を削除
+function removePhotoFromLocalStorage(photoData) {
     let photos = JSON.parse(localStorage.getItem('photos')) || [];
     photos = photos.filter(photo => photo.date !== photoData.date);
     localStorage.setItem('photos', JSON.stringify(photos));
