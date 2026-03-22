@@ -368,6 +368,35 @@ function formatDateTime(date) {
     return `${year}年${month}月${day}日 ${hours}:${minutes}`;
 }
 
+// 画像を圧縮
+function compressImage(imageData, quality = 0.6) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            let width = img.width;
+            let height = img.height;
+            const maxWidth = 1200;
+            
+            if (width > maxWidth) {
+                height = (height * maxWidth) / width;
+                width = maxWidth;
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            const compressedData = canvas.toDataURL('image/jpeg', quality);
+            console.log('画像圧縮完了:', Math.round(imageData.length / 1024), 'KB →', Math.round(compressedData.length / 1024), 'KB');
+            resolve(compressedData);
+        };
+        img.src = imageData;
+    });
+}
+
 // Firebaseに写真を保存
 function savePhotoToFirebase(photoData) {
     if (!firebaseInitialized || !db) {
@@ -375,43 +404,24 @@ function savePhotoToFirebase(photoData) {
         return;
     }
     
-    // Base64画像をBlob に変換
-    const base64Data = photoData.image.split(',')[1];
-    const byteCharacters = atob(base64Data);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-    const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: 'image/jpeg' });
-    
-    // ファイルパスを作成（重複なし）
-    const storage = firebase.storage();
-    const fileName = `memories/${photoData.userId}/${photoData.date}.jpg`;
-    const storageRef = storage.ref(fileName);
-    
-    // Firebase Storageに画像をアップロード
-    storageRef.put(blob).then((snapshot) => {
-        console.log('Firebase Storageにアップロード完了');
-        // ダウンロードURLを取得
-        return storageRef.getDownloadURL();
-    }).then((downloadURL) => {
-        console.log('ダウンロードURL取得:', downloadURL);
-        
-        // Firestoreにメタデータを保存（画像データは含めない）
+    // 画像を圧縮
+    compressImage(photoData.image, 0.6).then((compressedImage) => {
         const firestoreData = {
             timestamp: photoData.timestamp,
             date: photoData.date,
             userId: photoData.userId,
-            imageUrl: downloadURL
+            image: compressedImage
         };
         
-        return db.collection('memories').add(firestoreData);
-    }).then((docRef) => {
-        console.log('Firestoreにメタデータを保存しました:', docRef.id);
-    }).catch((error) => {
-        console.error('Firebase保存エラー:', error);
-        console.log('ローカルストレージに保存されています');
+        db.collection('memories')
+            .add(firestoreData)
+            .then((docRef) => {
+                console.log('Firestore（圧縮画像付き）に保存しました:', docRef.id);
+            })
+            .catch((error) => {
+                console.error('Firestore保存エラー:', error);
+                console.log('ローカルに保存されています');
+            });
     });
 }
 
@@ -459,22 +469,8 @@ function loadPhotosFromFirebase() {
                 const photoData = doc.data();
                 photoData.firebaseId = doc.id;
                 
-                // Firebase Storageから画像を取得
-                if (photoData.imageUrl) {
-                    // imageUrlから画像データを取得（キャッシュ）
-                    fetch(photoData.imageUrl)
-                        .then(res => res.blob())
-                        .then(blob => {
-                            const reader = new FileReader();
-                            reader.onload = (e) => {
-                                photoData.image = e.target.result;
-                                addPhotoToGallery(photoData);
-                            };
-                            reader.readAsDataURL(blob);
-                        })
-                        .catch(err => console.error('画像取得エラー:', err));
-                } else {
-                    // 旧形式のデータ（直接画像データを含む）
+                // Firestoreから直接圧縮画像データを取得
+                if (photoData.image) {
                     addPhotoToGallery(photoData);
                 }
             });
