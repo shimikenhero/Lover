@@ -158,19 +158,61 @@ function showPreview(imageData) {
     previewArea.classList.remove('hidden');
     previewMessage.textContent = '「Now」ボタンを押すと、今の日付と時刻と共に保存されます';
     
-    const newNowButton = nowButton.cloneNode(true);
-    nowButton.parentNode.replaceChild(newNowButton, nowButton);
+    // 古いイベントリスナーを完全に削除
+    nowButton.replaceWith(nowButton.cloneNode(true));
+    cancelButton.replaceWith(cancelButton.cloneNode(true));
     
-    newNowButton.addEventListener('click', function() {
-        savePhotoWithTimestamp(imageData);
-        previewArea.classList.add('hidden');
-        document.getElementById('imageUpload').value = '';
+    // 新しい参照を取得
+    const newNowButton = document.getElementById('nowButton');
+    const newCancelButton = document.getElementById('cancelButton');
+    
+    // イベントリスナーを登録
+    newNowButton.addEventListener('click', handleNowButtonClick);
+    newCancelButton.addEventListener('click', handleCancelButtonClick);
+    
+    // スマホのタッチイベントにも対応
+    newNowButton.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        handleNowButtonClick.call(this, e);
+    });
+    newCancelButton.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        handleCancelButtonClick.call(this, e);
     });
     
-    cancelButton.addEventListener('click', function() {
-        previewArea.classList.add('hidden');
+    // グローバル変数に保存して関数内でアクセス
+    window.currentImageData = imageData;
+}
+
+// Nowボタンクリック処理
+function handleNowButtonClick(e) {
+    if (e && e.preventDefault) {
+        e.preventDefault();
+    }
+    e.stopPropagation();
+    
+    console.log('Nowボタンがクリックされました');
+    
+    if (window.currentImageData) {
+        savePhotoWithTimestamp(window.currentImageData);
+        document.getElementById('previewArea').classList.add('hidden');
         document.getElementById('imageUpload').value = '';
-    });
+        window.currentImageData = null;
+    }
+}
+
+// キャンセルボタンクリック処理
+function handleCancelButtonClick(e) {
+    if (e && e.preventDefault) {
+        e.preventDefault();
+    }
+    e.stopPropagation();
+    
+    console.log('キャンセルボタンがクリックされました');
+    
+    document.getElementById('previewArea').classList.add('hidden');
+    document.getElementById('imageUpload').value = '';
+    window.currentImageData = null;
 }
 
 // タイムスタンプ付きで写真を保存

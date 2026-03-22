@@ -323,6 +323,10 @@ body {
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
     text-transform: uppercase;
     letter-spacing: 1px;
+    -webkit-appearance: none;
+    -webkit-touch-callout: none;
+    user-select: none;
+    touch-action: manipulation;
 }
 
 .now-button:hover {
@@ -346,6 +350,10 @@ body {
     cursor: pointer;
     margin: 0 10px;
     transition: all 0.3s ease;
+    -webkit-appearance: none;
+    -webkit-touch-callout: none;
+    user-select: none;
+    touch-action: manipulation;
 }
 
 .cancel-button:hover {
