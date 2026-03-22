@@ -138,6 +138,7 @@ document.addEventListener('DOMContentLoaded', function() {
     calculateRelationshipDays();
     setupTabNavigation();
     setupImageUpload();
+    setupModalEvents();
     
     // IndexedDBを初期化してからFirebaseから読み込む
     initIndexedDB().then(() => {
@@ -147,6 +148,41 @@ document.addEventListener('DOMContentLoaded', function() {
         loadPhotosFromFirebase();
     });
 });
+
+// モーダルイベントを初期化
+function setupModalEvents() {
+    const modal = document.getElementById('photoModal');
+    const modalCloseBtn = document.getElementById('modalCloseBtn');
+    const modalDeleteBtn = document.getElementById('modalDeleteBtn');
+    
+    // ×ボタン
+    modalCloseBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('×ボタンクリック');
+        modal.classList.add('hidden');
+    });
+    
+    // 背景クリック
+    modal.addEventListener('click', function(e) {
+        if (e.target === this) {
+            console.log('背景クリック');
+            modal.classList.add('hidden');
+        }
+    });
+    
+    // 削除ボタン
+    modalDeleteBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('削除ボタンクリック');
+        
+        if (window.currentPhotoData) {
+            deletePhoto(window.currentPhotoData);
+            modal.classList.add('hidden');
+        }
+    });
+}
 
 // ページ初期化
 function initializePage() {
@@ -532,10 +568,57 @@ function addPhotoToGallery(photoData) {
         removePhotoFromLocalStorage(photoData);
     });
     
+    // 画像クリック時にモーダルを表示
+    photoItem.addEventListener('click', function() {
+        showPhotoModal(photoData);
+    });
+    
     photoItem.appendChild(img);
     photoItem.appendChild(timestampLabel);
     photoItem.appendChild(deleteBtn);
     photoGallery.appendChild(photoItem);
+}
+
+// モーダルを表示
+function showPhotoModal(photoData) {
+    const modal = document.getElementById('photoModal');
+    const modalImage = document.getElementById('modalImage');
+    const modalDate = document.getElementById('modalDate');
+    
+    // 現在の画像データをグローバル変数に保存
+    window.currentPhotoData = photoData;
+    
+    // 画像と日付を表示
+    modalImage.src = photoData.image;
+    modalDate.textContent = photoData.timestamp;
+    
+    // モーダルを表示
+    modal.classList.remove('hidden');
+    console.log('モーダル表示');
+}
+
+// 写真を削除
+function deletePhoto(photoData) {
+    console.log('写真削除開始');
+    
+    // Firebaseから削除
+    if (photoData.firebaseId) {
+        removePhotoFromFirebase(photoData.firebaseId);
+    }
+    
+    // IndexedDBから削除
+    removePhotoFromIndexedDB(photoData.date);
+    
+    // LocalStorageから削除
+    removePhotoFromLocalStorage(photoData);
+    
+    // ギャラリーから削除
+    const photoItem = document.querySelector(`[data-firebase-id="${photoData.firebaseId}"]`);
+    if (photoItem) {
+        photoItem.remove();
+    }
+    
+    console.log('写真を削除しました');
 }
 
 // Firebaseから写真を削除
