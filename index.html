@@ -38,9 +38,20 @@
                             <p class="upload-text">クリックして写真をアップロード</p>
                             <p class="upload-subtitle">または、ここにドラッグ＆ドロップ</p>
                         </div>
-                        <input type="file" id="imageUpload" accept="image/*" multiple hidden>
+                        <input type="file" id="imageUpload" accept="image/*" hidden>
                     </label>
                 </div>
+                
+                <!-- プレビュー領域 -->
+                <div id="previewArea" class="preview-area hidden">
+                    <div class="preview-container">
+                        <img id="previewImage" src="" alt="プレビュー">
+                        <button id="nowButton" class="now-button">Now</button>
+                        <button id="cancelButton" class="cancel-button">キャンセル</button>
+                    </div>
+                    <p id="previewMessage" class="preview-message"></p>
+                </div>
+                
                 <div id="photoGallery" class="photo-gallery">
                 </div>
             </section>

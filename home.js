@@ -107,8 +107,7 @@ function handleFiles(files) {
             
             reader.onload = function(e) {
                 const imageData = e.target.result;
-                addPhotoToGallery(imageData);
-                savePhotoToStorage(imageData);
+                showPreview(imageData);
             };
             
             reader.readAsDataURL(files[i]);
@@ -116,15 +115,47 @@ function handleFiles(files) {
     }
 }
 
+// プレビューを表示
+function showPreview(imageData) {
+    const previewArea = document.getElementById('previewArea');
+    const previewImage = document.getElementById('previewImage');
+    const previewMessage = document.getElementById('previewMessage');
+    const nowButton = document.getElementById('nowButton');
+    const cancelButton = document.getElementById('cancelButton');
+    
+    previewImage.src = imageData;
+    previewArea.classList.remove('hidden');
+    previewMessage.textContent = '「Now」ボタンを押すと、今の日付と時刻と共に保存されます';
+    
+    // 前の「Now」ボタンのイベントリスナーを削除
+    const newNowButton = nowButton.cloneNode(true);
+    nowButton.parentNode.replaceChild(newNowButton, nowButton);
+    
+    newNowButton.addEventListener('click', function() {
+        savePhotoWithTimestamp(imageData);
+        previewArea.classList.add('hidden');
+        document.getElementById('imageUpload').value = '';
+    });
+    
+    cancelButton.addEventListener('click', function() {
+        previewArea.classList.add('hidden');
+        document.getElementById('imageUpload').value = '';
+    });
+}
+
 // ギャラリーに写真を追加
-function addPhotoToGallery(imageData) {
+function addPhotoToGallery(photoData) {
     const photoGallery = document.getElementById('photoGallery');
     
     const photoItem = document.createElement('div');
     photoItem.className = 'photo-item';
     
     const img = document.createElement('img');
-    img.src = imageData;
+    img.src = photoData.image;
+    
+    const timestampLabel = document.createElement('div');
+    timestampLabel.className = 'timestamp-label';
+    timestampLabel.textContent = photoData.timestamp;
     
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'delete-btn';
@@ -132,18 +163,45 @@ function addPhotoToGallery(imageData) {
     deleteBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         photoItem.remove();
-        removePhotoFromStorage(imageData);
+        removePhotoFromStorage(photoData);
     });
     
     photoItem.appendChild(img);
+    photoItem.appendChild(timestampLabel);
     photoItem.appendChild(deleteBtn);
     photoGallery.appendChild(photoItem);
 }
 
+// タイムスタンプ付きで写真を保存
+function savePhotoWithTimestamp(imageData) {
+    const now = new Date();
+    const timestamp = formatDateTime(now);
+    
+    const photoData = {
+        image: imageData,
+        timestamp: timestamp,
+        date: now.toISOString()
+    };
+    
+    addPhotoToGallery(photoData);
+    savePhotoToStorage(photoData);
+}
+
+// 日付時刻をフォーマット
+function formatDateTime(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    
+    return `${year}年${month}月${day}日 ${hours}:${minutes}`;
+}
+
 // LocalStorage に写真を保存
-function savePhotoToStorage(imageData) {
+function savePhotoToStorage(photoData) {
     let photos = JSON.parse(localStorage.getItem('photos')) || [];
-    photos.push(imageData);
+    photos.push(photoData);
     localStorage.setItem('photos', JSON.stringify(photos));
 }
 
@@ -152,13 +210,15 @@ function loadPhotosFromStorage() {
     const photos = JSON.parse(localStorage.getItem('photos')) || [];
     
     photos.forEach(photoData => {
-        addPhotoToGallery(photoData);
+        if (photoData.image) {
+            addPhotoToGallery(photoData);
+        }
     });
 }
 
 // LocalStorage から写真を削除
-function removePhotoFromStorage(imageData) {
+function removePhotoFromStorage(photoData) {
     let photos = JSON.parse(localStorage.getItem('photos')) || [];
-    photos = photos.filter(photo => photo !== imageData);
+    photos = photos.filter(photo => photo.date !== photoData.date);
     localStorage.setItem('photos', JSON.stringify(photos));
 }
