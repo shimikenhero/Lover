@@ -671,38 +671,59 @@ function displayWeather() {
     
     if (!weatherTempElement || !weatherDescElement) return;
     
-    // ユーザーの位置を取得
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(function(position) {
-            const latitude = position.coords.latitude;
-            const longitude = position.coords.longitude;
+    // 福岡の座標を指定
+    const latitude = 33.5904;
+    const longitude = 130.4017;
+    
+    // 無料の天気API（Open-Meteo）を使用 - APIキー不要
+    const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&timezone=Asia/Tokyo`;
+    
+    console.log('天気API呼び出し:', apiUrl);
+    
+    fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+            console.log('APIレスポンス:', data);
+            const temp = Math.round(data.current.temperature_2m);
             
-            // OpenWeatherMap APIを使用（無料プラン）
-            const apiKey = 'a8591b92d8669cebeb9ec7a41a6e4b14';
-            const apiUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${apiKey}&units=metric&lang=ja`;
+            // 天気コード（WMO）から説明を取得
+            const weatherCode = data.current.weather_code;
+            const weatherDescriptions = {
+                0: '晴れ',
+                1: 'ほぼ晴れ',
+                2: '一部曇り',
+                3: '曇り',
+                45: '霧',
+                48: 'むし霧',
+                51: 'ほぼ止まない霧雨',
+                53: '霧雨',
+                55: '濃い霧雨',
+                61: '弱い雨',
+                63: '雨',
+                65: '強い雨',
+                71: '弱い雪',
+                73: '雪',
+                75: '強い雪',
+                80: '弱いにわか雨',
+                81: 'にわか雨',
+                82: '強いにわか雨',
+                85: 'にわか雪',
+                86: '強いにわか雪',
+                95: '雷雨',
+                96: 'ひょう付き雷雨',
+                99: 'ひょう付き雷雨'
+            };
             
-            fetch(apiUrl)
-                .then(response => response.json())
-                .then(data => {
-                    const temp = Math.round(data.main.temp);
-                    const description = data.weather[0].description;
-                    
-                    weatherTempElement.textContent = `${temp}°C`;
-                    weatherDescElement.textContent = description;
-                    
-                    console.log('天気情報取得成功:', temp, '°C', description);
-                })
-                .catch(error => {
-                    console.log('天気情報取得失敗:', error);
-                    weatherTempElement.textContent = '--';
-                    weatherDescElement.textContent = '天気情報を取得できません';
-                });
-        }, function(error) {
-            console.log('位置情報へのアクセスが拒否されました', error);
+            const description = weatherDescriptions[weatherCode] || '不明';
+            
+            weatherTempElement.textContent = `${temp}°C`;
+            weatherDescElement.textContent = description;
+            
+            console.log('福岡の天気情報表示成功:', temp, '°C', description);
+        })
+        .catch(error => {
+            console.error('天気情報取得失敗:', error);
             weatherTempElement.textContent = '--';
-            weatherDescElement.textContent = '位置情報が必要です';
+            weatherDescElement.textContent = '天気情報を取得できません';
         });
-    } else {
-        console.log('Geolocation APIに対応していないブラウザです');
-    }
 }
