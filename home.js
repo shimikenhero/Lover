@@ -13,15 +13,25 @@ const firebaseConfig = {
 let db = null;
 let firebaseInitialized = false;
 
+console.log('typeof firebase:', typeof firebase);
+
 if (typeof firebase !== 'undefined') {
     try {
-        firebase.initializeApp(firebaseConfig);
+        console.log('Firebaseスクリプト検出。初期化を開始します');
+        console.log('firebase.apps.length:', firebase.apps.length);
+        
+        // 既に初期化されている場合はスキップ
+        if (firebase.apps.length === 0) {
+            firebase.initializeApp(firebaseConfig);
+            console.log('initializeApp実行');
+        }
+        
         db = firebase.firestore();
         firebaseInitialized = true;
         console.log('Firebaseが初期化されました');
     } catch (error) {
         console.error('Firebase初期化エラー:', error);
-        alert('Firebaseの接続に失敗しました。ローカルモードで動作します。');
+        console.error('エラー詳細:', error.message);
     }
 } else {
     console.warn('Firebaseスクリプトが読み込まれていません。ローカルストレージのみを使用します。');
