@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>しみず＆あゆみ</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- ナビゲーションタブ -->
+        <nav class="tab-navigation">
+            <button class="tab-button active" data-tab="relationship">交際期間</button>
+            <button class="tab-button" data-tab="memories">思い出フォルダー</button>
+        </nav>
+
+        <!-- コンテンツ -->
+        <main class="content">
+            <!-- 交際期間タブ -->
+            <section id="relationship" class="tab-content active">
+                <h2>交際期間</h2>
+                <div class="relationship-container">
+                    <p class="start-date">開始日：2025年11月9日</p>
+                    <div class="days-counter">
+                        <span id="dayCount" class="days-number">0</span>
+                        <p class="days-label">日間一緒にいます💕</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 思い出フォルダータブ -->
+            <section id="memories" class="tab-content">
+                <h2>思い出フォルダー</h2>
+                <div class="memory-upload-area">
+                    <label for="imageUpload" class="upload-label">
+                        <div class="upload-box">
+                            <p class="upload-icon">📷</p>
+                            <p class="upload-text">クリックして写真をアップロード</p>
+                            <p class="upload-subtitle">または、ここにドラッグ＆ドロップ</p>
+                        </div>
+                        <input type="file" id="imageUpload" accept="image/*" multiple hidden>
+                    </label>
+                </div>
+                <div id="photoGallery" class="photo-gallery">
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="home.js"></script>
+</body>
+</html>
