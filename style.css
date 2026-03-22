@@ -9,10 +9,58 @@ body {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 20px;
     animation: fadeIn 1.5s ease-in-out;
+}
+
+/* ヘッダー（日付・天気） */
+.header-info {
+    width: 100%;
+    max-width: 600px;
+    margin-bottom: 30px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 15px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.date-weather-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.current-date {
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.weather-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 8px 15px;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #ffffff;
+}
+
+.weather-temp {
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.weather-desc {
+    opacity: 0.9;
 }
 
 @keyframes fadeIn {

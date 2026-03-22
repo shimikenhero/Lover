@@ -139,6 +139,8 @@ document.addEventListener('DOMContentLoaded', function() {
     setupTabNavigation();
     setupImageUpload();
     setupModalEvents();
+    displayCurrentDate();
+    displayWeather();
     
     // IndexedDBを初期化してからFirebaseから読み込む
     initIndexedDB().then(() => {
@@ -643,4 +645,64 @@ function removePhotoFromLocalStorage(photoData) {
     let photos = JSON.parse(localStorage.getItem('photos')) || [];
     photos = photos.filter(photo => photo.date !== photoData.date);
     localStorage.setItem('photos', JSON.stringify(photos));
+}
+
+// 現在の日付を表示
+function displayCurrentDate() {
+    const dateElement = document.getElementById('currentDate');
+    if (!dateElement) return;
+    
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const date = String(now.getDate()).padStart(2, '0');
+    const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+    const day = dayNames[now.getDay()];
+    
+    const dateString = `${year}年${month}月${date}日（${day}）`;
+    dateElement.textContent = dateString;
+    console.log('日付表示:', dateString);
+}
+
+// 天気を表示（OpenWeatherMap API使用）
+function displayWeather() {
+    const weatherTempElement = document.getElementById('weatherTemp');
+    const weatherDescElement = document.getElementById('weatherDesc');
+    
+    if (!weatherTempElement || !weatherDescElement) return;
+    
+    // ユーザーの位置を取得
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            
+            // OpenWeatherMap APIを使用（無料プラン）
+            const apiKey = 'a8591b92d8669cebeb9ec7a41a6e4b14';
+            const apiUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${apiKey}&units=metric&lang=ja`;
+            
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    const temp = Math.round(data.main.temp);
+                    const description = data.weather[0].description;
+                    
+                    weatherTempElement.textContent = `${temp}°C`;
+                    weatherDescElement.textContent = description;
+                    
+                    console.log('天気情報取得成功:', temp, '°C', description);
+                })
+                .catch(error => {
+                    console.log('天気情報取得失敗:', error);
+                    weatherTempElement.textContent = '--';
+                    weatherDescElement.textContent = '天気情報を取得できません';
+                });
+        }, function(error) {
+            console.log('位置情報へのアクセスが拒否されました', error);
+            weatherTempElement.textContent = '--';
+            weatherDescElement.textContent = '位置情報が必要です';
+        });
+    } else {
+        console.log('Geolocation APIに対応していないブラウザです');
+    }
 }
