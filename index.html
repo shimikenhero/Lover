@@ -65,6 +65,16 @@
                 
                 <div id="photoGallery" class="photo-gallery">
                 </div>
+
+                <!--0418_コメント/ハッシュタグ入力欄対応-->
+                <div class="photo-meta-inputs">
+                    <textarea id="photoComment" class="meta-textarea" placeholder="コメントを入力..." rows="2"></textarea>
+                    <div class="hashtag-input-wrapper">
+                        <span class="hashtag-prefix">#</span>
+                        <input type="text" id="photoHashtags" class="meta-input" placeholder="タグ1 タグ2 タグ3（スペース区切り）">
+                    </div>
+                </div>
+                <!--0418_コメント/ハッシュタグ入力欄対応-->
                 
                 <!-- 画像表示モーダル -->
                 <div id="photoModal" class="photo-modal hidden">
@@ -73,6 +83,10 @@
                         <img id="modalImage" src="" alt="拡大画像">
                         <div class="modal-info">
                             <p id="modalDate" class="modal-date"></p>
+                            <!--0418_コメント/ハッシュタグ入力欄対応-->
+                            <p id="modalComment" class="modal-comment"></p>
+                            <div id="modalHashtags" class="modal-hashtags"></div>
+                            <!--0418_コメント/ハッシュタグ入力欄対応-->
                             <button id="modalDeleteBtn" class="modal-delete-btn">削除</button>
                         </div>
                     </div>
