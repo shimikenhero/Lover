@@ -138,7 +138,8 @@ document.addEventListener('DOMContentLoaded', function() {
     setupTabNavigation();
     setupImageUpload();
     setupModalEvents();
-    setupHashtagSearch(); // ← 追加
+    setupHashtagSearch();
+    setupCalendar();
     displayCurrentDate();
     displayWeather();
 
@@ -192,20 +193,16 @@ function setupHashtagSearch() {
 
     if (!searchInput) return;
 
-    // 入力のたびにリアルタイム検索
     searchInput.addEventListener('input', function() {
         const query = this.value.trim();
-
         if (query.length > 0) {
             clearBtn.classList.remove('hidden');
         } else {
             clearBtn.classList.add('hidden');
         }
-
         filterGalleryByHashtag(query);
     });
 
-    // クリアボタン
     clearBtn.addEventListener('click', function() {
         searchInput.value = '';
         clearBtn.classList.add('hidden');
@@ -213,7 +210,6 @@ function setupHashtagSearch() {
         searchInput.focus();
     });
 
-    // Enterキーでも検索
     searchInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             filterGalleryByHashtag(this.value.trim());
@@ -221,23 +217,18 @@ function setupHashtagSearch() {
     });
 }
 
-// ギャラリーをハッシュタグでフィルタリング
 function filterGalleryByHashtag(query) {
     const photoItems = document.querySelectorAll('.photo-item');
     const resultInfo = document.getElementById('searchResultInfo');
 
-    // 検索ワードを正規化（#を除去してすべて小文字に）
     const normalizedQuery = query.replace(/^#/, '').toLowerCase();
-
     let visibleCount = 0;
 
     photoItems.forEach(item => {
         if (!normalizedQuery) {
-            // 検索ワードが空なら全件表示
             item.classList.remove('hidden-by-search');
             visibleCount++;
         } else {
-            // data属性からハッシュタグを取得して照合
             const tags = item.getAttribute('data-hashtags') || '';
             const normalizedTags = tags.toLowerCase();
 
@@ -250,7 +241,6 @@ function filterGalleryByHashtag(query) {
         }
     });
 
-    // 検索結果の件数を表示
     if (!normalizedQuery) {
         resultInfo.classList.add('hidden');
     } else {
@@ -263,6 +253,285 @@ function filterGalleryByHashtag(query) {
             resultInfo.className = 'search-result-info has-result';
         }
     }
+}
+
+// =============================
+// カレンダー機能
+// =============================
+
+// カレンダーの状態
+const calendarState = {
+    view: 'month',   // 'month' or 'year'
+    year: new Date().getFullYear(),
+    month: new Date().getMonth()  // 0-11
+};
+
+// 写真データのキャッシュ（日付 → 写真リスト）
+let photoDatesMap = {};
+
+function setupCalendar() {
+    const viewSelect = document.getElementById('calendarViewSelect');
+    const prevBtn = document.getElementById('calPrev');
+    const nextBtn = document.getElementById('calNext');
+
+    if (!viewSelect) return;
+
+    // プルダウン切り替え
+    viewSelect.addEventListener('change', function() {
+        calendarState.view = this.value;
+        renderCalendar();
+    });
+
+    // 前へボタン
+    prevBtn.addEventListener('click', function() {
+        if (calendarState.view === 'month') {
+            calendarState.month--;
+            if (calendarState.month < 0) {
+                calendarState.month = 11;
+                calendarState.year--;
+            }
+        } else {
+            calendarState.year--;
+        }
+        renderCalendar();
+    });
+
+    // 次へボタン
+    nextBtn.addEventListener('click', function() {
+        if (calendarState.view === 'month') {
+            calendarState.month++;
+            if (calendarState.month > 11) {
+                calendarState.month = 0;
+                calendarState.year++;
+            }
+        } else {
+            calendarState.year++;
+        }
+        renderCalendar();
+    });
+
+    renderCalendar();
+}
+
+// カレンダーを描画
+function renderCalendar() {
+    if (calendarState.view === 'month') {
+        renderMonthCalendar();
+    } else {
+        renderYearCalendar();
+    }
+}
+
+// タイトルを更新
+function updateCalendarTitle() {
+    const titleEl = document.getElementById('calendarTitle');
+    if (calendarState.view === 'month') {
+        const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月',
+                            '7月', '8月', '9月', '10月', '11月', '12月'];
+        titleEl.textContent = calendarState.year + '年 ' + monthNames[calendarState.month];
+    } else {
+        titleEl.textContent = calendarState.year + '年';
+    }
+}
+
+// 月カレンダーを描画
+function renderMonthCalendar() {
+    updateCalendarTitle();
+    const body = document.getElementById('calendarBody');
+    body.innerHTML = '';
+
+    const year = calendarState.year;
+    const month = calendarState.month;
+
+    // カレンダーテーブル
+    const table = document.createElement('table');
+    table.className = 'calendar-table';
+
+    // 曜日ヘッダー
+    const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    dayNames.forEach((d, i) => {
+        const th = document.createElement('th');
+        th.textContent = d;
+        if (i === 0) th.className = 'sunday';
+        if (i === 6) th.className = 'saturday';
+        headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    // 日付セル
+    const tbody = document.createElement('tbody');
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+
+    let day = 1;
+    for (let row = 0; row < 6; row++) {
+        const tr = document.createElement('tr');
+        for (let col = 0; col < 7; col++) {
+            const td = document.createElement('td');
+
+            if (row === 0 && col < firstDay) {
+                td.className = 'empty';
+            } else if (day > daysInMonth) {
+                td.className = 'empty';
+            } else {
+                const dateKey = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+                const photos = photoDatesMap[dateKey] || [];
+
+                td.className = 'calendar-day';
+                if (col === 0) td.classList.add('sunday');
+                if (col === 6) td.classList.add('saturday');
+
+                // 今日をハイライト
+                if (year === today.getFullYear() && month === today.getMonth() && day === today.getDate()) {
+                    td.classList.add('today');
+                }
+
+                // 日付番号
+                const dayNum = document.createElement('span');
+                dayNum.className = 'day-number';
+                dayNum.textContent = day;
+                td.appendChild(dayNum);
+
+                // 写真がある日にドット表示
+                if (photos.length > 0) {
+                    const dot = document.createElement('span');
+                    dot.className = 'photo-dot';
+                    dot.textContent = '📷';
+                    dot.title = photos.length + '枚の写真';
+                    td.appendChild(dot);
+
+                    // クリックで思い出フォルダーへ
+                    td.classList.add('has-photo');
+                    td.addEventListener('click', function() {
+                        switchTab('memories');
+                    });
+                }
+
+                day++;
+            }
+            tr.appendChild(td);
+        }
+        tbody.appendChild(tr);
+        if (day > daysInMonth) break;
+    }
+
+    table.appendChild(tbody);
+    body.appendChild(table);
+}
+
+// 年カレンダーを描画
+function renderYearCalendar() {
+    updateCalendarTitle();
+    const body = document.getElementById('calendarBody');
+    body.innerHTML = '';
+
+    const year = calendarState.year;
+    const today = new Date();
+    const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月',
+                        '7月', '8月', '9月', '10月', '11月', '12月'];
+
+    const grid = document.createElement('div');
+    grid.className = 'year-grid';
+
+    for (let m = 0; m < 12; m++) {
+        const monthCard = document.createElement('div');
+        monthCard.className = 'month-card';
+
+        // 月タイトル（クリックで月表示に切り替え）
+        const monthTitle = document.createElement('div');
+        monthTitle.className = 'month-card-title';
+        monthTitle.textContent = monthNames[m];
+        monthTitle.addEventListener('click', function() {
+            calendarState.view = 'month';
+            calendarState.month = m;
+            document.getElementById('calendarViewSelect').value = 'month';
+            renderCalendar();
+        });
+        monthCard.appendChild(monthTitle);
+
+        // ミニカレンダー
+        const miniTable = document.createElement('table');
+        miniTable.className = 'mini-calendar';
+
+        // 曜日ヘッダー
+        const miniThead = document.createElement('thead');
+        const miniHeaderRow = document.createElement('tr');
+        ['日', '月', '火', '水', '木', '金', '土'].forEach((d, i) => {
+            const th = document.createElement('th');
+            th.textContent = d;
+            if (i === 0) th.className = 'sunday';
+            if (i === 6) th.className = 'saturday';
+            miniHeaderRow.appendChild(th);
+        });
+        miniThead.appendChild(miniHeaderRow);
+        miniTable.appendChild(miniThead);
+
+        // 日付
+        const miniTbody = document.createElement('tbody');
+        const firstDay = new Date(year, m, 1).getDay();
+        const daysInMonth = new Date(year, m + 1, 0).getDate();
+
+        let day = 1;
+        for (let row = 0; row < 6; row++) {
+            const tr = document.createElement('tr');
+            for (let col = 0; col < 7; col++) {
+                const td = document.createElement('td');
+
+                if (row === 0 && col < firstDay) {
+                    td.className = 'empty';
+                } else if (day > daysInMonth) {
+                    td.className = 'empty';
+                } else {
+                    const dateKey = year + '-' + String(m + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+                    const photos = photoDatesMap[dateKey] || [];
+
+                    if (col === 0) td.className = 'sunday';
+                    if (col === 6) td.className = 'saturday';
+
+                    // 今日をハイライト
+                    if (year === today.getFullYear() && m === today.getMonth() && day === today.getDate()) {
+                        td.classList.add('today');
+                    }
+
+                    td.textContent = day;
+
+                    // 写真がある日にドット
+                    if (photos.length > 0) {
+                        td.classList.add('has-photo');
+                        td.title = photos.length + '枚の写真';
+                    }
+
+                    day++;
+                }
+                tr.appendChild(td);
+            }
+            miniTbody.appendChild(tr);
+            if (day > daysInMonth) break;
+        }
+
+        miniTable.appendChild(miniTbody);
+        monthCard.appendChild(miniTable);
+        grid.appendChild(monthCard);
+    }
+
+    body.appendChild(grid);
+}
+
+// Firebaseから写真を読み込んだときにカレンダー用マップを更新
+function updatePhotoDatesMap(photoData) {
+    if (!photoData.date) return;
+    const d = new Date(photoData.date);
+    const key = d.getFullYear() + '-' +
+                String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                String(d.getDate()).padStart(2, '0');
+    if (!photoDatesMap[key]) {
+        photoDatesMap[key] = [];
+    }
+    photoDatesMap[key].push(photoData);
 }
 
 // ページ初期化
@@ -312,6 +581,11 @@ function switchTab(tabName) {
 
     document.getElementById(tabName).classList.add('active');
     document.querySelector('[data-tab="' + tabName + '"]').classList.add('active');
+
+    // カレンダータブを開いたら再描画
+    if (tabName === 'calendar') {
+        renderCalendar();
+    }
 }
 
 // 画像アップロード設定
@@ -377,23 +651,18 @@ function showPreview(imageData) {
     previewArea.classList.remove('hidden');
     previewMessage.textContent = '「Now」ボタンを押すと、今の日付と時刻と共に保存されます';
 
-    // 入力欄をリセット
     document.getElementById('photoComment').value = '';
     document.getElementById('photoHashtags').value = '';
 
-    // 古いイベントリスナーを完全に削除
     nowButton.replaceWith(nowButton.cloneNode(true));
     cancelButton.replaceWith(cancelButton.cloneNode(true));
 
-    // 新しい参照を取得
     const newNowButton = document.getElementById('nowButton');
     const newCancelButton = document.getElementById('cancelButton');
 
-    // イベントリスナーを登録
     newNowButton.addEventListener('click', handleNowButtonClick);
     newCancelButton.addEventListener('click', handleCancelButtonClick);
 
-    // スマホのタッチイベントにも対応
     newNowButton.addEventListener('touchend', function(e) {
         e.preventDefault();
         handleNowButtonClick.call(this, e);
@@ -415,7 +684,6 @@ function handleNowButtonClick(e) {
         console.log('Nowボタンがクリックされました');
 
         if (window.currentImageData) {
-            // コメントとハッシュタグを取得
             const comment = document.getElementById('photoComment').value.trim();
             const hashtagRaw = document.getElementById('photoHashtags').value.trim();
             const hashtags = hashtagRaw
@@ -475,6 +743,7 @@ function savePhotoWithTimestamp(imageData, comment = '', hashtags = []) {
         savePhotoToFirebase(photoData);
         savePhotoToLocalStorage(photoData);
         addPhotoToGallery(photoData);
+        updatePhotoDatesMap(photoData);
 
         console.log('保存完了');
     } catch (error) {
@@ -577,8 +846,12 @@ function loadPhotosFromFirebase() {
         loadPhotosFromIndexedDB().then((photos) => {
             photos.reverse();
             photos.forEach(photoData => {
-                if (photoData.image) addPhotoToGallery(photoData);
+                if (photoData.image) {
+                    addPhotoToGallery(photoData);
+                    updatePhotoDatesMap(photoData);
+                }
             });
+            renderCalendar();
         });
         return;
     }
@@ -588,6 +861,7 @@ function loadPhotosFromFirebase() {
         .onSnapshot((snapshot) => {
             const photoGallery = document.getElementById('photoGallery');
             photoGallery.innerHTML = '';
+            photoDatesMap = {};
 
             snapshot.forEach((doc) => {
                 const photoData = doc.data();
@@ -595,10 +869,14 @@ function loadPhotosFromFirebase() {
 
                 if (photoData.image) {
                     addPhotoToGallery(photoData);
+                    updatePhotoDatesMap(photoData);
                 }
             });
 
-            // 読み込み後、検索中なら再フィルタリング
+            // カレンダーを再描画
+            renderCalendar();
+
+            // 検索中なら再フィルタリング
             const searchInput = document.getElementById('hashtagSearchInput');
             if (searchInput && searchInput.value.trim()) {
                 filterGalleryByHashtag(searchInput.value.trim());
@@ -609,8 +887,12 @@ function loadPhotosFromFirebase() {
             loadPhotosFromIndexedDB().then((photos) => {
                 photos.reverse();
                 photos.forEach(photoData => {
-                    if (photoData.image) addPhotoToGallery(photoData);
+                    if (photoData.image) {
+                        addPhotoToGallery(photoData);
+                        updatePhotoDatesMap(photoData);
+                    }
                 });
+                renderCalendar();
             });
         });
 }
@@ -618,10 +900,10 @@ function loadPhotosFromFirebase() {
 // ローカルストレージから写真を読み込む
 function loadPhotosFromLocalStorage() {
     const photos = JSON.parse(localStorage.getItem('photos')) || [];
-
     photos.forEach(photoData => {
         if (photoData.image) {
             addPhotoToGallery(photoData);
+            updatePhotoDatesMap(photoData);
         }
     });
 }
@@ -630,15 +912,12 @@ function loadPhotosFromLocalStorage() {
 function addPhotoToGallery(photoData) {
     const photoGallery = document.getElementById('photoGallery');
 
-    if (document.querySelector('[data-firebase-id="' + photoData.firebaseId + '"]')) {
-        return;
-    }
+    if (document.querySelector('[data-firebase-id="' + photoData.firebaseId + '"]')) return;
 
     const photoItem = document.createElement('div');
     photoItem.className = 'photo-item';
     photoItem.setAttribute('data-firebase-id', photoData.firebaseId || photoData.date);
 
-    // ハッシュタグをdata属性に保存（検索用）
     if (photoData.hashtags && photoData.hashtags.length > 0) {
         photoItem.setAttribute('data-hashtags', photoData.hashtags.join(' '));
     }
@@ -650,7 +929,6 @@ function addPhotoToGallery(photoData) {
     timestampLabel.className = 'timestamp-label';
     timestampLabel.textContent = photoData.timestamp;
 
-    // ハッシュタグをギャラリーに表示
     if (photoData.hashtags && photoData.hashtags.length > 0) {
         const hashtagLabel = document.createElement('div');
         hashtagLabel.className = 'hashtag-label';
@@ -664,15 +942,11 @@ function addPhotoToGallery(photoData) {
     deleteBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         photoItem.remove();
-
-        if (photoData.firebaseId) {
-            removePhotoFromFirebase(photoData.firebaseId);
-        }
+        if (photoData.firebaseId) removePhotoFromFirebase(photoData.firebaseId);
         removePhotoFromIndexedDB(photoData.date);
         removePhotoFromLocalStorage(photoData);
     });
 
-    // 画像クリック時にモーダルを表示
     photoItem.addEventListener('click', function() {
         showPhotoModal(photoData);
     });
@@ -696,7 +970,6 @@ function showPhotoModal(photoData) {
     modalImage.src = photoData.image;
     modalDate.textContent = photoData.timestamp;
 
-    // コメントを表示
     if (photoData.comment) {
         modalComment.textContent = photoData.comment;
         modalComment.style.display = 'block';
@@ -704,7 +977,6 @@ function showPhotoModal(photoData) {
         modalComment.style.display = 'none';
     }
 
-    // ハッシュタグを表示（クリックで検索できる）
     modalHashtags.innerHTML = '';
     if (photoData.hashtags && photoData.hashtags.length > 0) {
         photoData.hashtags.forEach(tag => {
@@ -712,7 +984,6 @@ function showPhotoModal(photoData) {
             span.className = 'modal-hashtag-item';
             span.textContent = tag;
 
-            // タグをクリックすると検索バーに反映して絞り込む
             span.addEventListener('click', function() {
                 modal.classList.add('hidden');
                 const searchInput = document.getElementById('hashtagSearchInput');
@@ -734,26 +1005,19 @@ function showPhotoModal(photoData) {
 function deletePhoto(photoData) {
     console.log('写真削除開始');
 
-    if (photoData.firebaseId) {
-        removePhotoFromFirebase(photoData.firebaseId);
-    }
-
+    if (photoData.firebaseId) removePhotoFromFirebase(photoData.firebaseId);
     removePhotoFromIndexedDB(photoData.date);
     removePhotoFromLocalStorage(photoData);
 
     const photoItem = document.querySelector('[data-firebase-id="' + photoData.firebaseId + '"]');
-    if (photoItem) {
-        photoItem.remove();
-    }
+    if (photoItem) photoItem.remove();
 
     console.log('写真を削除しました');
 }
 
 // Firebaseから写真を削除
 function removePhotoFromFirebase(firebaseId) {
-    if (!firebaseInitialized || !db) {
-        return;
-    }
+    if (!firebaseInitialized || !db) return;
 
     db.collection('memories')
         .doc(firebaseId)
@@ -790,18 +1054,15 @@ function displayCurrentDate() {
     console.log('日付表示:', dateString);
 }
 
-// 天気を表示（OpenWeatherMap API使用）
+// 天気を表示（Open-Meteo API使用）
 function displayWeather() {
     const weatherTempElement = document.getElementById('weatherTemp');
     const weatherDescElement = document.getElementById('weatherDesc');
 
     if (!weatherTempElement || !weatherDescElement) return;
 
-    // 福岡の座標を指定
     const latitude = 33.5904;
     const longitude = 130.4017;
-
-    // 無料の天気API（Open-Meteo）を使用 - APIキー不要
     const apiUrl = 'https://api.open-meteo.com/v1/forecast?latitude=' + latitude + '&longitude=' + longitude + '&current=temperature_2m,weather_code&timezone=Asia/Tokyo';
 
     console.log('天気API呼び出し:', apiUrl);
@@ -811,36 +1072,19 @@ function displayWeather() {
         .then(data => {
             console.log('APIレスポンス:', data);
             const temp = Math.round(data.current.temperature_2m);
-
             const weatherCode = data.current.weather_code;
             const weatherDescriptions = {
-                0: '晴れ',
-                1: 'ほぼ晴れ',
-                2: '一部曇り',
-                3: '曇り',
-                45: '霧',
-                48: 'むし霧',
-                51: 'ほぼ止まない霧雨',
-                53: '霧雨',
-                55: '濃い霧雨',
-                61: '弱い雨',
-                63: '雨',
-                65: '強い雨',
-                71: '弱い雪',
-                73: '雪',
-                75: '強い雪',
-                80: '弱いにわか雨',
-                81: 'にわか雨',
-                82: '強いにわか雨',
-                85: 'にわか雪',
-                86: '強いにわか雪',
-                95: '雷雨',
-                96: 'ひょう付き雷雨',
-                99: 'ひょう付き雷雨'
+                0: '晴れ', 1: 'ほぼ晴れ', 2: '一部曇り', 3: '曇り',
+                45: '霧', 48: 'むし霧',
+                51: 'ほぼ止まない霧雨', 53: '霧雨', 55: '濃い霧雨',
+                61: '弱い雨', 63: '雨', 65: '強い雨',
+                71: '弱い雪', 73: '雪', 75: '強い雪',
+                80: '弱いにわか雨', 81: 'にわか雨', 82: '強いにわか雨',
+                85: 'にわか雪', 86: '強いにわか雪',
+                95: '雷雨', 96: 'ひょう付き雷雨', 99: 'ひょう付き雷雨'
             };
 
             const description = weatherDescriptions[weatherCode] || '不明';
-
             weatherTempElement.textContent = temp + '°C';
             weatherDescElement.textContent = description;
 

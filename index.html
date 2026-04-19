@@ -23,6 +23,7 @@
         <nav class="tab-navigation">
             <button class="tab-button active" data-tab="relationship">交際期間</button>
             <button class="tab-button" data-tab="memories">思い出フォルダー</button>
+            <button class="tab-button" data-tab="calendar">カレンダー</button>
         </nav>
 
         <!-- コンテンツ -->
@@ -83,8 +84,7 @@
                     <p id="previewMessage" class="preview-message"></p>
                 </div>
 
-                <div id="photoGallery" class="photo-gallery">
-                </div>
+                <div id="photoGallery" class="photo-gallery"></div>
 
                 <!-- 画像表示モーダル -->
                 <div id="photoModal" class="photo-modal hidden">
@@ -99,6 +99,27 @@
                         </div>
                     </div>
                 </div>
+            </section>
+
+            <!-- カレンダータブ -->
+            <section id="calendar" class="tab-content">
+                <h2>カレンダー</h2>
+
+                <!-- 表示切り替えコントロール -->
+                <div class="calendar-controls">
+                    <button class="calendar-nav-btn" id="calPrev">&#8592;</button>
+                    <div class="calendar-center">
+                        <span class="calendar-title" id="calendarTitle"></span>
+                        <select id="calendarViewSelect" class="calendar-view-select">
+                            <option value="month">月表示</option>
+                            <option value="year">年表示</option>
+                        </select>
+                    </div>
+                    <button class="calendar-nav-btn" id="calNext">&#8594;</button>
+                </div>
+
+                <!-- カレンダー本体 -->
+                <div id="calendarBody" class="calendar-body"></div>
             </section>
         </main>
     </div>

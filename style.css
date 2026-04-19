@@ -64,14 +64,8 @@ body {
 }
 
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 .container {
@@ -85,14 +79,8 @@ body {
 }
 
 @keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(50px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(50px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 /* タブナビゲーション */
@@ -104,11 +92,11 @@ body {
 
 .tab-button {
     flex: 1;
-    padding: 15px 20px;
+    padding: 15px 10px;
     background: none;
     border: none;
     color: white;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -133,12 +121,8 @@ body {
 }
 
 @keyframes contentFadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
 
 .tab-content {
@@ -184,14 +168,8 @@ body {
 }
 
 @keyframes countUp {
-    from {
-        font-size: 0;
-        opacity: 0;
-    }
-    to {
-        font-size: 60px;
-        opacity: 1;
-    }
+    from { font-size: 0; opacity: 0; }
+    to   { font-size: 60px; opacity: 1; }
 }
 
 .days-label {
@@ -282,7 +260,6 @@ body {
     color: #e05555;
 }
 
-/* 検索でヒットしなかった写真を非表示 */
 .photo-item.hidden-by-search {
     display: none;
 }
@@ -349,14 +326,8 @@ body {
 }
 
 @keyframes photoAppear {
-    from {
-        opacity: 0;
-        transform: scale(0.8);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
+    from { opacity: 0; transform: scale(0.8); }
+    to   { opacity: 1; transform: scale(1); }
 }
 
 .photo-item:hover {
@@ -410,14 +381,8 @@ body {
 }
 
 @keyframes previewAppear {
-    from {
-        opacity: 0;
-        transform: scale(0.95);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
+    from { opacity: 0; transform: scale(0.95); }
+    to   { opacity: 1; transform: scale(1); }
 }
 
 .preview-container {
@@ -434,14 +399,8 @@ body {
 }
 
 @keyframes imageZoom {
-    from {
-        opacity: 0;
-        transform: scale(0.8);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
+    from { opacity: 0; transform: scale(0.8); }
+    to   { opacity: 1; transform: scale(1); }
 }
 
 /* コメント・ハッシュタグ入力欄 */
@@ -561,18 +520,6 @@ body {
     font-size: 14px;
     font-weight: 600;
     margin: 0;
-    animation: slideDown 0.4s ease-out;
-}
-
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 /* タイムスタンプラベル */
@@ -658,7 +605,6 @@ body {
     margin-bottom: 12px;
 }
 
-/* モーダルのコメント */
 .modal-comment {
     font-size: 15px;
     color: #444;
@@ -669,7 +615,6 @@ body {
     line-height: 1.6;
 }
 
-/* モーダルのハッシュタグ */
 .modal-hashtags {
     display: flex;
     flex-wrap: wrap;
@@ -731,14 +676,262 @@ body {
     transform: translateY(-2px);
 }
 
+/* =============================
+   カレンダー
+   ============================= */
+
+/* コントロールバー（← タイトル プルダウン →） */
+.calendar-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    gap: 10px;
+}
+
+.calendar-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.calendar-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #667eea;
+}
+
+.calendar-view-select {
+    border: 2px solid #e0e0ff;
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 13px;
+    color: #667eea;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+    background: #f8f9ff;
+    transition: border-color 0.3s;
+    font-family: inherit;
+}
+
+.calendar-view-select:focus {
+    border-color: #667eea;
+}
+
+.calendar-nav-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.calendar-nav-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.6);
+}
+
+.calendar-nav-btn:active {
+    transform: scale(0.95);
+}
+
+/* 月カレンダー */
+.calendar-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.calendar-table thead th {
+    padding: 8px 4px;
+    text-align: center;
+    font-weight: 700;
+    color: #667eea;
+    border-bottom: 2px solid #e0e0ff;
+}
+
+.calendar-table thead th.sunday {
+    color: #e05555;
+}
+
+.calendar-table thead th.saturday {
+    color: #5588e0;
+}
+
+.calendar-table td {
+    padding: 6px 4px;
+    text-align: center;
+    vertical-align: top;
+    height: 52px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.calendar-table td.empty {
+    background: transparent;
+}
+
+.calendar-table td.calendar-day {
+    border-radius: 8px;
+    cursor: default;
+    position: relative;
+}
+
+.calendar-table td.calendar-day.sunday .day-number {
+    color: #e05555;
+}
+
+.calendar-table td.calendar-day.saturday .day-number {
+    color: #5588e0;
+}
+
+.day-number {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+/* 今日をハイライト */
+.calendar-table td.today .day-number {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white !important;
+    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 写真のある日 */
+.calendar-table td.has-photo {
+    cursor: pointer;
+    background: rgba(102, 126, 234, 0.06);
+    border-radius: 8px;
+}
+
+.calendar-table td.has-photo:hover {
+    background: rgba(102, 126, 234, 0.15);
+}
+
+.photo-dot {
+    display: block;
+    font-size: 13px;
+    line-height: 1;
+}
+
+/* 年カレンダー（12ヶ月グリッド） */
+.year-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.month-card {
+    border: 2px solid #e0e0ff;
+    border-radius: 12px;
+    padding: 10px 8px;
+    background: #fafbff;
+    transition: box-shadow 0.2s;
+}
+
+.month-card:hover {
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.month-card-title {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #667eea;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.month-card-title:hover {
+    color: #764ba2;
+    text-decoration: underline;
+}
+
+/* ミニカレンダー */
+.mini-calendar {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+}
+
+.mini-calendar thead th {
+    text-align: center;
+    padding: 2px 1px;
+    color: #888;
+    font-weight: 600;
+}
+
+.mini-calendar thead th.sunday {
+    color: #e05555;
+}
+
+.mini-calendar thead th.saturday {
+    color: #5588e0;
+}
+
+.mini-calendar tbody td {
+    text-align: center;
+    padding: 2px 1px;
+    border-radius: 4px;
+    font-size: 10px;
+    line-height: 1.6;
+}
+
+.mini-calendar tbody td.sunday {
+    color: #e05555;
+}
+
+.mini-calendar tbody td.saturday {
+    color: #5588e0;
+}
+
+.mini-calendar tbody td.today {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white !important;
+    border-radius: 50%;
+    font-weight: 700;
+}
+
+.mini-calendar tbody td.has-photo {
+    background: rgba(102, 126, 234, 0.18);
+    border-radius: 4px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
 /* レスポンシブ */
 @media (max-width: 600px) {
     .content {
-        padding: 25px;
+        padding: 20px;
+    }
+
+    .tab-button {
+        font-size: 12px;
+        padding: 12px 6px;
     }
 
     .tab-content h2 {
-        font-size: 24px;
+        font-size: 22px;
     }
 
     .days-number {
@@ -757,5 +950,21 @@ body {
     .cancel-button {
         padding: 10px 25px;
         font-size: 14px;
+    }
+
+    /* 年カレンダーはスマホで2列 */
+    .year-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .calendar-title {
+        font-size: 15px;
+    }
+
+    .calendar-nav-btn {
+        width: 34px;
+        height: 34px;
+        font-size: 15px;
     }
 }
