@@ -138,6 +138,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setupTabNavigation();
     setupImageUpload();
     setupModalEvents();
+    setupHashtagSearch(); // ← 追加
     displayCurrentDate();
     displayWeather();
 
@@ -158,11 +159,13 @@ function setupModalEvents() {
     modalCloseBtn.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
+        console.log('×ボタンクリック');
         modal.classList.add('hidden');
     });
 
     modal.addEventListener('click', function(e) {
         if (e.target === this) {
+            console.log('背景クリック');
             modal.classList.add('hidden');
         }
     });
@@ -170,12 +173,96 @@ function setupModalEvents() {
     modalDeleteBtn.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
+        console.log('削除ボタンクリック');
 
         if (window.currentPhotoData) {
             deletePhoto(window.currentPhotoData);
             modal.classList.add('hidden');
         }
     });
+}
+
+// =============================
+// ハッシュタグ検索機能
+// =============================
+
+function setupHashtagSearch() {
+    const searchInput = document.getElementById('hashtagSearchInput');
+    const clearBtn = document.getElementById('hashtagSearchClear');
+
+    if (!searchInput) return;
+
+    // 入力のたびにリアルタイム検索
+    searchInput.addEventListener('input', function() {
+        const query = this.value.trim();
+
+        if (query.length > 0) {
+            clearBtn.classList.remove('hidden');
+        } else {
+            clearBtn.classList.add('hidden');
+        }
+
+        filterGalleryByHashtag(query);
+    });
+
+    // クリアボタン
+    clearBtn.addEventListener('click', function() {
+        searchInput.value = '';
+        clearBtn.classList.add('hidden');
+        filterGalleryByHashtag('');
+        searchInput.focus();
+    });
+
+    // Enterキーでも検索
+    searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            filterGalleryByHashtag(this.value.trim());
+        }
+    });
+}
+
+// ギャラリーをハッシュタグでフィルタリング
+function filterGalleryByHashtag(query) {
+    const photoItems = document.querySelectorAll('.photo-item');
+    const resultInfo = document.getElementById('searchResultInfo');
+
+    // 検索ワードを正規化（#を除去してすべて小文字に）
+    const normalizedQuery = query.replace(/^#/, '').toLowerCase();
+
+    let visibleCount = 0;
+
+    photoItems.forEach(item => {
+        if (!normalizedQuery) {
+            // 検索ワードが空なら全件表示
+            item.classList.remove('hidden-by-search');
+            visibleCount++;
+        } else {
+            // data属性からハッシュタグを取得して照合
+            const tags = item.getAttribute('data-hashtags') || '';
+            const normalizedTags = tags.toLowerCase();
+
+            if (normalizedTags.includes(normalizedQuery)) {
+                item.classList.remove('hidden-by-search');
+                visibleCount++;
+            } else {
+                item.classList.add('hidden-by-search');
+            }
+        }
+    });
+
+    // 検索結果の件数を表示
+    if (!normalizedQuery) {
+        resultInfo.classList.add('hidden');
+    } else {
+        resultInfo.classList.remove('hidden');
+        if (visibleCount === 0) {
+            resultInfo.textContent = '「#' + normalizedQuery + '」の写真は見つかりませんでした';
+            resultInfo.className = 'search-result-info no-result';
+        } else {
+            resultInfo.textContent = '「#' + normalizedQuery + '」の写真が ' + visibleCount + ' 件見つかりました';
+            resultInfo.className = 'search-result-info has-result';
+        }
+    }
 }
 
 // ページ初期化
@@ -224,7 +311,7 @@ function switchTab(tabName) {
     });
 
     document.getElementById(tabName).classList.add('active');
-    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    document.querySelector('[data-tab="' + tabName + '"]').classList.add('active');
 }
 
 // 画像アップロード設定
@@ -298,12 +385,15 @@ function showPreview(imageData) {
     nowButton.replaceWith(nowButton.cloneNode(true));
     cancelButton.replaceWith(cancelButton.cloneNode(true));
 
+    // 新しい参照を取得
     const newNowButton = document.getElementById('nowButton');
     const newCancelButton = document.getElementById('cancelButton');
 
+    // イベントリスナーを登録
     newNowButton.addEventListener('click', handleNowButtonClick);
     newCancelButton.addEventListener('click', handleCancelButtonClick);
 
+    // スマホのタッチイベントにも対応
     newNowButton.addEventListener('touchend', function(e) {
         e.preventDefault();
         handleNowButtonClick.call(this, e);
@@ -400,7 +490,7 @@ function formatDateTime(date) {
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
 
-    return `${year}年${month}月${day}日 ${hours}:${minutes}`;
+    return year + '年' + month + '月' + day + '日 ' + hours + ':' + minutes;
 }
 
 // 画像を圧縮
@@ -452,10 +542,11 @@ function savePhotoToFirebase(photoData) {
         db.collection('memories')
             .add(firestoreData)
             .then((docRef) => {
-                console.log('Firestoreに保存しました:', docRef.id);
+                console.log('Firestore（圧縮画像付き）に保存しました:', docRef.id);
             })
             .catch((error) => {
                 console.error('Firestore保存エラー:', error);
+                console.log('ローカルに保存されています');
             });
     });
 }
@@ -506,6 +597,12 @@ function loadPhotosFromFirebase() {
                     addPhotoToGallery(photoData);
                 }
             });
+
+            // 読み込み後、検索中なら再フィルタリング
+            const searchInput = document.getElementById('hashtagSearchInput');
+            if (searchInput && searchInput.value.trim()) {
+                filterGalleryByHashtag(searchInput.value.trim());
+            }
         },
         (error) => {
             console.error('Firebaseから読み込む際にエラー:', error);
@@ -521,8 +618,11 @@ function loadPhotosFromFirebase() {
 // ローカルストレージから写真を読み込む
 function loadPhotosFromLocalStorage() {
     const photos = JSON.parse(localStorage.getItem('photos')) || [];
+
     photos.forEach(photoData => {
-        if (photoData.image) addPhotoToGallery(photoData);
+        if (photoData.image) {
+            addPhotoToGallery(photoData);
+        }
     });
 }
 
@@ -530,11 +630,18 @@ function loadPhotosFromLocalStorage() {
 function addPhotoToGallery(photoData) {
     const photoGallery = document.getElementById('photoGallery');
 
-    if (document.querySelector(`[data-firebase-id="${photoData.firebaseId}"]`)) return;
+    if (document.querySelector('[data-firebase-id="' + photoData.firebaseId + '"]')) {
+        return;
+    }
 
     const photoItem = document.createElement('div');
     photoItem.className = 'photo-item';
     photoItem.setAttribute('data-firebase-id', photoData.firebaseId || photoData.date);
+
+    // ハッシュタグをdata属性に保存（検索用）
+    if (photoData.hashtags && photoData.hashtags.length > 0) {
+        photoItem.setAttribute('data-hashtags', photoData.hashtags.join(' '));
+    }
 
     const img = document.createElement('img');
     img.src = photoData.image;
@@ -557,11 +664,15 @@ function addPhotoToGallery(photoData) {
     deleteBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         photoItem.remove();
-        if (photoData.firebaseId) removePhotoFromFirebase(photoData.firebaseId);
+
+        if (photoData.firebaseId) {
+            removePhotoFromFirebase(photoData.firebaseId);
+        }
         removePhotoFromIndexedDB(photoData.date);
         removePhotoFromLocalStorage(photoData);
     });
 
+    // 画像クリック時にモーダルを表示
     photoItem.addEventListener('click', function() {
         showPhotoModal(photoData);
     });
@@ -593,13 +704,24 @@ function showPhotoModal(photoData) {
         modalComment.style.display = 'none';
     }
 
-    // ハッシュタグを表示
+    // ハッシュタグを表示（クリックで検索できる）
     modalHashtags.innerHTML = '';
     if (photoData.hashtags && photoData.hashtags.length > 0) {
         photoData.hashtags.forEach(tag => {
             const span = document.createElement('span');
             span.className = 'modal-hashtag-item';
             span.textContent = tag;
+
+            // タグをクリックすると検索バーに反映して絞り込む
+            span.addEventListener('click', function() {
+                modal.classList.add('hidden');
+                const searchInput = document.getElementById('hashtagSearchInput');
+                const clearBtn = document.getElementById('hashtagSearchClear');
+                searchInput.value = tag;
+                clearBtn.classList.remove('hidden');
+                filterGalleryByHashtag(tag);
+            });
+
             modalHashtags.appendChild(span);
         });
     }
@@ -612,19 +734,26 @@ function showPhotoModal(photoData) {
 function deletePhoto(photoData) {
     console.log('写真削除開始');
 
-    if (photoData.firebaseId) removePhotoFromFirebase(photoData.firebaseId);
+    if (photoData.firebaseId) {
+        removePhotoFromFirebase(photoData.firebaseId);
+    }
+
     removePhotoFromIndexedDB(photoData.date);
     removePhotoFromLocalStorage(photoData);
 
-    const photoItem = document.querySelector(`[data-firebase-id="${photoData.firebaseId}"]`);
-    if (photoItem) photoItem.remove();
+    const photoItem = document.querySelector('[data-firebase-id="' + photoData.firebaseId + '"]');
+    if (photoItem) {
+        photoItem.remove();
+    }
 
     console.log('写真を削除しました');
 }
 
 // Firebaseから写真を削除
 function removePhotoFromFirebase(firebaseId) {
-    if (!firebaseInitialized || !db) return;
+    if (!firebaseInitialized || !db) {
+        return;
+    }
 
     db.collection('memories')
         .doc(firebaseId)
@@ -656,40 +785,66 @@ function displayCurrentDate() {
     const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
     const day = dayNames[now.getDay()];
 
-    const dateString = `${year}年${month}月${date}日（${day}）`;
+    const dateString = year + '年' + month + '月' + date + '日（' + day + '）';
     dateElement.textContent = dateString;
+    console.log('日付表示:', dateString);
 }
 
-// 天気を表示（Open-Meteo API使用）
+// 天気を表示（OpenWeatherMap API使用）
 function displayWeather() {
     const weatherTempElement = document.getElementById('weatherTemp');
     const weatherDescElement = document.getElementById('weatherDesc');
 
     if (!weatherTempElement || !weatherDescElement) return;
 
+    // 福岡の座標を指定
     const latitude = 33.5904;
     const longitude = 130.4017;
-    const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&timezone=Asia/Tokyo`;
+
+    // 無料の天気API（Open-Meteo）を使用 - APIキー不要
+    const apiUrl = 'https://api.open-meteo.com/v1/forecast?latitude=' + latitude + '&longitude=' + longitude + '&current=temperature_2m,weather_code&timezone=Asia/Tokyo';
+
+    console.log('天気API呼び出し:', apiUrl);
 
     fetch(apiUrl)
         .then(response => response.json())
         .then(data => {
+            console.log('APIレスポンス:', data);
             const temp = Math.round(data.current.temperature_2m);
+
             const weatherCode = data.current.weather_code;
             const weatherDescriptions = {
-                0: '晴れ', 1: 'ほぼ晴れ', 2: '一部曇り', 3: '曇り',
-                45: '霧', 48: 'むし霧',
-                51: 'ほぼ止まない霧雨', 53: '霧雨', 55: '濃い霧雨',
-                61: '弱い雨', 63: '雨', 65: '強い雨',
-                71: '弱い雪', 73: '雪', 75: '強い雪',
-                80: '弱いにわか雨', 81: 'にわか雨', 82: '強いにわか雨',
-                85: 'にわか雪', 86: '強いにわか雪',
-                95: '雷雨', 96: 'ひょう付き雷雨', 99: 'ひょう付き雷雨'
+                0: '晴れ',
+                1: 'ほぼ晴れ',
+                2: '一部曇り',
+                3: '曇り',
+                45: '霧',
+                48: 'むし霧',
+                51: 'ほぼ止まない霧雨',
+                53: '霧雨',
+                55: '濃い霧雨',
+                61: '弱い雨',
+                63: '雨',
+                65: '強い雨',
+                71: '弱い雪',
+                73: '雪',
+                75: '強い雪',
+                80: '弱いにわか雨',
+                81: 'にわか雨',
+                82: '強いにわか雨',
+                85: 'にわか雪',
+                86: '強いにわか雪',
+                95: '雷雨',
+                96: 'ひょう付き雷雨',
+                99: 'ひょう付き雷雨'
             };
 
             const description = weatherDescriptions[weatherCode] || '不明';
-            weatherTempElement.textContent = `${temp}°C`;
+
+            weatherTempElement.textContent = temp + '°C';
             weatherDescElement.textContent = description;
+
+            console.log('福岡の天気情報表示成功:', temp, '°C', description);
         })
         .catch(error => {
             console.error('天気情報取得失敗:', error);

@@ -42,6 +42,17 @@
             <!-- 思い出フォルダータブ -->
             <section id="memories" class="tab-content">
                 <h2>思い出フォルダー</h2>
+
+                <!-- ハッシュタグ検索バー -->
+                <div class="hashtag-search-bar">
+                    <div class="search-input-wrapper">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="hashtagSearchInput" class="hashtag-search-input" placeholder="#ハッシュタグで検索...">
+                        <button id="hashtagSearchClear" class="search-clear-btn hidden">✕</button>
+                    </div>
+                    <div id="searchResultInfo" class="search-result-info hidden"></div>
+                </div>
+
                 <div class="memory-upload-area">
                     <label for="imageUpload" class="upload-label">
                         <div class="upload-box">
@@ -52,30 +63,29 @@
                         <input type="file" id="imageUpload" accept="image/*" hidden>
                     </label>
                 </div>
-                
+
                 <!-- プレビュー領域 -->
                 <div id="previewArea" class="preview-area hidden">
                     <div class="preview-container">
                         <img id="previewImage" src="" alt="プレビュー">
+                    </div>
+                    <div class="photo-meta-inputs">
+                        <textarea id="photoComment" class="meta-textarea" placeholder="コメントを入力..." rows="2"></textarea>
+                        <div class="hashtag-input-wrapper">
+                            <span class="hashtag-prefix">#</span>
+                            <input type="text" id="photoHashtags" class="meta-input" placeholder="タグ1 タグ2 タグ3（スペース区切り）">
+                        </div>
+                    </div>
+                    <div class="preview-buttons">
                         <button id="nowButton" type="button" class="now-button">Now</button>
                         <button id="cancelButton" type="button" class="cancel-button">キャンセル</button>
                     </div>
                     <p id="previewMessage" class="preview-message"></p>
                 </div>
-                
+
                 <div id="photoGallery" class="photo-gallery">
                 </div>
 
-                <!--0418_コメント/ハッシュタグ入力欄対応-->
-                <div class="photo-meta-inputs">
-                    <textarea id="photoComment" class="meta-textarea" placeholder="コメントを入力..." rows="2"></textarea>
-                    <div class="hashtag-input-wrapper">
-                        <span class="hashtag-prefix">#</span>
-                        <input type="text" id="photoHashtags" class="meta-input" placeholder="タグ1 タグ2 タグ3（スペース区切り）">
-                    </div>
-                </div>
-                <!--0418_コメント/ハッシュタグ入力欄対応-->
-                
                 <!-- 画像表示モーダル -->
                 <div id="photoModal" class="photo-modal hidden">
                     <div class="modal-content">
@@ -83,10 +93,8 @@
                         <img id="modalImage" src="" alt="拡大画像">
                         <div class="modal-info">
                             <p id="modalDate" class="modal-date"></p>
-                            <!--0418_コメント/ハッシュタグ入力欄対応-->
                             <p id="modalComment" class="modal-comment"></p>
                             <div id="modalHashtags" class="modal-hashtags"></div>
-                            <!--0418_コメント/ハッシュタグ入力欄対応-->
                             <button id="modalDeleteBtn" class="modal-delete-btn">削除</button>
                         </div>
                     </div>
@@ -99,7 +107,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-    
+
     <script src="home.js"></script>
 </body>
 </html>
