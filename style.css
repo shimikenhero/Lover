@@ -264,7 +264,10 @@ body {
     display: none;
 }
 
-/* 思い出フォルダーセクション */
+/* =============================
+   アップロードエリア
+   ============================= */
+
 .memory-upload-area {
     margin-bottom: 30px;
 }
@@ -277,7 +280,7 @@ body {
 .upload-box {
     border: 3px dashed #667eea;
     border-radius: 15px;
-    padding: 50px 20px;
+    padding: 40px 20px;
     text-align: center;
     transition: all 0.3s ease;
     background: #f8f9ff;
@@ -290,7 +293,7 @@ body {
 }
 
 .upload-icon {
-    font-size: 50px;
+    font-size: 40px;
     margin-bottom: 15px;
 }
 
@@ -304,10 +307,19 @@ body {
 .upload-subtitle {
     color: #999;
     font-size: 14px;
+    margin-bottom: 6px;
+}
+
+.upload-note {
+    color: #bbb;
+    font-size: 12px;
     margin: 0;
 }
 
-/* フォトギャラリー */
+/* =============================
+   フォトギャラリー
+   ============================= */
+
 .photo-gallery {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -323,6 +335,7 @@ body {
     cursor: pointer;
     transition: transform 0.3s ease;
     animation: photoAppear 0.5s ease-out;
+    background: #000;
 }
 
 @keyframes photoAppear {
@@ -340,6 +353,38 @@ body {
     object-fit: cover;
 }
 
+/* ギャラリー内の動画サムネイル */
+.gallery-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+}
+
+/* 動画再生オーバーレイ（▶アイコン） */
+.play-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.55);
+    color: white;
+    font-size: 24px;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    transition: background 0.2s ease;
+}
+
+.photo-item:hover .play-overlay {
+    background: rgba(102, 126, 234, 0.75);
+}
+
+/* 削除ボタン */
 .photo-item .delete-btn {
     position: absolute;
     top: 5px;
@@ -356,6 +401,7 @@ body {
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
+    z-index: 10;
 }
 
 .photo-item:hover .delete-btn {
@@ -366,7 +412,10 @@ body {
     background: rgba(255, 0, 0, 1);
 }
 
-/* プレビュー領域 */
+/* =============================
+   プレビュー領域
+   ============================= */
+
 .preview-area {
     background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
     border-radius: 15px;
@@ -390,12 +439,23 @@ body {
     margin-bottom: 20px;
 }
 
+/* 画像プレビュー */
 #previewImage {
     max-width: 100%;
     max-height: 300px;
     border-radius: 12px;
     box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
     animation: imageZoom 0.5s ease-out;
+}
+
+/* 動画プレビュー */
+#previewVideo {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+    animation: imageZoom 0.5s ease-out;
+    background: #000;
 }
 
 @keyframes imageZoom {
@@ -550,16 +610,20 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    z-index: 5;
 }
 
-/* 画像表示モーダル */
+/* =============================
+   メディアモーダル
+   ============================= */
+
 .photo-modal {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.85);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -585,12 +649,23 @@ body {
     align-items: center;
 }
 
+/* モーダル内の画像 */
 #modalImage {
     width: 100%;
-    max-height: 70vh;
+    max-height: 65vh;
     border-radius: 10px;
     object-fit: contain;
     margin-bottom: 20px;
+}
+
+/* モーダル内の動画 */
+#modalVideo {
+    width: 100%;
+    max-height: 65vh;
+    border-radius: 10px;
+    object-fit: contain;
+    margin-bottom: 20px;
+    background: #000;
 }
 
 .modal-info {
@@ -653,6 +728,9 @@ body {
     cursor: pointer;
     transition: all 0.2s ease;
     z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .modal-close:hover {
@@ -676,11 +754,15 @@ body {
     transform: translateY(-2px);
 }
 
+/* hidden ユーティリティ */
+.hidden {
+    display: none !important;
+}
+
 /* =============================
    カレンダー
    ============================= */
 
-/* コントロールバー（← タイトル プルダウン →） */
 .calendar-controls {
     display: flex;
     align-items: center;
@@ -762,13 +844,8 @@ body {
     border-bottom: 2px solid #e0e0ff;
 }
 
-.calendar-table thead th.sunday {
-    color: #e05555;
-}
-
-.calendar-table thead th.saturday {
-    color: #5588e0;
-}
+.calendar-table thead th.sunday { color: #e05555; }
+.calendar-table thead th.saturday { color: #5588e0; }
 
 .calendar-table td {
     padding: 6px 4px;
@@ -778,9 +855,7 @@ body {
     border-bottom: 1px solid #f0f0f0;
 }
 
-.calendar-table td.empty {
-    background: transparent;
-}
+.calendar-table td.empty { background: transparent; }
 
 .calendar-table td.calendar-day {
     border-radius: 8px;
@@ -788,13 +863,8 @@ body {
     position: relative;
 }
 
-.calendar-table td.calendar-day.sunday .day-number {
-    color: #e05555;
-}
-
-.calendar-table td.calendar-day.saturday .day-number {
-    color: #5588e0;
-}
+.calendar-table td.calendar-day.sunday .day-number { color: #e05555; }
+.calendar-table td.calendar-day.saturday .day-number { color: #5588e0; }
 
 .day-number {
     display: block;
@@ -804,7 +874,6 @@ body {
     margin-bottom: 4px;
 }
 
-/* 今日をハイライト */
 .calendar-table td.today .day-number {
     background: linear-gradient(135deg, #667eea, #764ba2);
     color: white !important;
@@ -816,7 +885,6 @@ body {
     justify-content: center;
 }
 
-/* 写真のある日 */
 .calendar-table td.has-photo {
     cursor: pointer;
     background: rgba(102, 126, 234, 0.06);
@@ -829,11 +897,11 @@ body {
 
 .photo-dot {
     display: block;
-    font-size: 13px;
+    font-size: 12px;
     line-height: 1;
 }
 
-/* 年カレンダー（12ヶ月グリッド） */
+/* 年カレンダー */
 .year-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -867,7 +935,6 @@ body {
     text-decoration: underline;
 }
 
-/* ミニカレンダー */
 .mini-calendar {
     width: 100%;
     border-collapse: collapse;
@@ -881,13 +948,8 @@ body {
     font-weight: 600;
 }
 
-.mini-calendar thead th.sunday {
-    color: #e05555;
-}
-
-.mini-calendar thead th.saturday {
-    color: #5588e0;
-}
+.mini-calendar thead th.sunday { color: #e05555; }
+.mini-calendar thead th.saturday { color: #5588e0; }
 
 .mini-calendar tbody td {
     text-align: center;
@@ -897,13 +959,8 @@ body {
     line-height: 1.6;
 }
 
-.mini-calendar tbody td.sunday {
-    color: #e05555;
-}
-
-.mini-calendar tbody td.saturday {
-    color: #5588e0;
-}
+.mini-calendar tbody td.sunday { color: #e05555; }
+.mini-calendar tbody td.saturday { color: #5588e0; }
 
 .mini-calendar tbody td.today {
     background: linear-gradient(135deg, #667eea, #764ba2);
@@ -919,7 +976,10 @@ body {
     cursor: pointer;
 }
 
-/* レスポンシブ */
+/* =============================
+   レスポンシブ
+   ============================= */
+
 @media (max-width: 600px) {
     .content {
         padding: 20px;
@@ -952,7 +1012,6 @@ body {
         font-size: 14px;
     }
 
-    /* 年カレンダーはスマホで2列 */
     .year-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 10px;
@@ -966,5 +1025,10 @@ body {
         width: 34px;
         height: 34px;
         font-size: 15px;
+    }
+
+    #modalVideo,
+    #modalImage {
+        max-height: 55vh;
     }
 }

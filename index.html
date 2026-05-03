@@ -55,20 +55,25 @@
                 </div>
 
                 <div class="memory-upload-area">
-                    <label for="imageUpload" class="upload-label">
+                    <label for="mediaUpload" class="upload-label">
                         <div class="upload-box">
-                            <p class="upload-icon">📷</p>
-                            <p class="upload-text">クリックして写真をアップロード</p>
+                            <p class="upload-icon">📷🎬</p>
+                            <p class="upload-text">クリックして写真・動画をアップロード</p>
                             <p class="upload-subtitle">または、ここにドラッグ＆ドロップ</p>
+                            <p class="upload-note">画像・動画（MP4, MOV など）対応</p>
                         </div>
-                        <input type="file" id="imageUpload" accept="image/*" hidden>
+                        <!-- 画像・動画どちらも受け付ける -->
+                        <input type="file" id="mediaUpload" accept="image/*,video/*" hidden>
                     </label>
                 </div>
 
                 <!-- プレビュー領域 -->
                 <div id="previewArea" class="preview-area hidden">
                     <div class="preview-container">
-                        <img id="previewImage" src="" alt="プレビュー">
+                        <!-- 画像プレビュー -->
+                        <img id="previewImage" src="" alt="プレビュー" class="hidden">
+                        <!-- 動画プレビュー -->
+                        <video id="previewVideo" controls class="hidden"></video>
                     </div>
                     <div class="photo-meta-inputs">
                         <textarea id="photoComment" class="meta-textarea" placeholder="コメントを入力..." rows="2"></textarea>
@@ -86,11 +91,14 @@
 
                 <div id="photoGallery" class="photo-gallery"></div>
 
-                <!-- 画像表示モーダル -->
+                <!-- メディア表示モーダル -->
                 <div id="photoModal" class="photo-modal hidden">
                     <div class="modal-content">
                         <button id="modalCloseBtn" class="modal-close">✕</button>
-                        <img id="modalImage" src="" alt="拡大画像">
+                        <!-- 画像モーダル -->
+                        <img id="modalImage" src="" alt="拡大画像" class="hidden">
+                        <!-- 動画モーダル -->
+                        <video id="modalVideo" controls class="hidden"></video>
                         <div class="modal-info">
                             <p id="modalDate" class="modal-date"></p>
                             <p id="modalComment" class="modal-comment"></p>
