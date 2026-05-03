@@ -54,6 +54,14 @@
                     <div id="searchResultInfo" class="search-result-info hidden"></div>
                 </div>
 
+                <!-- 写真・動画フィルターボタン -->
+                <div class="media-filter-bar">
+                    <button class="media-filter-btn active" data-filter="all">すべて</button>
+                    <button class="media-filter-btn" data-filter="image">📷 写真</button>
+                    <button class="media-filter-btn" data-filter="video">🎬 動画</button>
+                </div>
+
+                <!-- アップロードエリア -->
                 <div class="memory-upload-area">
                     <label for="mediaUpload" class="upload-label">
                         <div class="upload-box">
@@ -62,7 +70,6 @@
                             <p class="upload-subtitle">または、ここにドラッグ＆ドロップ</p>
                             <p class="upload-note">画像・動画（MP4, MOV など）対応</p>
                         </div>
-                        <!-- 画像・動画どちらも受け付ける -->
                         <input type="file" id="mediaUpload" accept="image/*,video/*" hidden>
                     </label>
                 </div>
@@ -70,11 +77,18 @@
                 <!-- プレビュー領域 -->
                 <div id="previewArea" class="preview-area hidden">
                     <div class="preview-container">
-                        <!-- 画像プレビュー -->
                         <img id="previewImage" src="" alt="プレビュー" class="hidden">
-                        <!-- 動画プレビュー -->
                         <video id="previewVideo" controls class="hidden"></video>
                     </div>
+
+                    <!-- アップロード進捗バー（動画用） -->
+                    <div id="uploadProgress" class="upload-progress hidden">
+                        <div class="progress-label">アップロード中... <span id="progressPercent">0</span>%</div>
+                        <div class="progress-bar-wrap">
+                            <div class="progress-bar-fill" id="progressBarFill"></div>
+                        </div>
+                    </div>
+
                     <div class="photo-meta-inputs">
                         <textarea id="photoComment" class="meta-textarea" placeholder="コメントを入力..." rows="2"></textarea>
                         <div class="hashtag-input-wrapper">
@@ -89,15 +103,14 @@
                     <p id="previewMessage" class="preview-message"></p>
                 </div>
 
+                <!-- ギャラリー -->
                 <div id="photoGallery" class="photo-gallery"></div>
 
                 <!-- メディア表示モーダル -->
                 <div id="photoModal" class="photo-modal hidden">
                     <div class="modal-content">
                         <button id="modalCloseBtn" class="modal-close">✕</button>
-                        <!-- 画像モーダル -->
                         <img id="modalImage" src="" alt="拡大画像" class="hidden">
-                        <!-- 動画モーダル -->
                         <video id="modalVideo" controls class="hidden"></video>
                         <div class="modal-info">
                             <p id="modalDate" class="modal-date"></p>
@@ -112,8 +125,6 @@
             <!-- カレンダータブ -->
             <section id="calendar" class="tab-content">
                 <h2>カレンダー</h2>
-
-                <!-- 表示切り替えコントロール -->
                 <div class="calendar-controls">
                     <button class="calendar-nav-btn" id="calPrev">&#8592;</button>
                     <div class="calendar-center">
@@ -125,8 +136,6 @@
                     </div>
                     <button class="calendar-nav-btn" id="calNext">&#8594;</button>
                 </div>
-
-                <!-- カレンダー本体 -->
                 <div id="calendarBody" class="calendar-body"></div>
             </section>
         </main>
